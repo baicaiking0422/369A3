@@ -72,11 +72,12 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
     else {
         return -1;
     }
+}
 
-char *get_file_name(char *file_path, char *file_name){
+char *get_file_name(char *file_path, char *file_name) {
     int i;
     i = strlen(file_path) - 1;
-    while (i >= 0 && file_path[i] != '/') {pa
+    while (i >= 0 && file_path[i] != '/') {
         i--;
     }
     strncpy(file_name, file_path + i + 1, strlen(file_path) - i);
