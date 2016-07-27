@@ -52,8 +52,6 @@ int main(int argc, const char * argv[]){
     //check if already dir
     // /a/c/ /a/c are different
     int inode_num;
-    char file_name[1024];
-    char file_parent_path[1024];
     if (path[path_len - 1] == '/') {
         inode_num = get_inode_num(path, inodes, disk);
     }
@@ -62,12 +60,11 @@ int main(int argc, const char * argv[]){
         inode_num = get_inode_num(path, inodes, disk);
         
         if (inode_num < 0) { // /ab/c c is a file
-            statements
+            <#statements#>
         }
     }
     
     if (inode_num == -1) {
-        fprintf(stderr, "Cannot find this path");
         return ENOENT;
     }
 
