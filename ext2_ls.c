@@ -12,7 +12,6 @@
 
 unsigned char *disk;
 
-
 int main(int argc, const char * argv[]) {
 
     if((argc != 3) && (argc != 4)) {
@@ -20,7 +19,7 @@ int main(int argc, const char * argv[]) {
         exit(1);
     }
 
-    if (argc == 4 && (strcmp(argv[2], "-a") != 0)){
+    if (argc == 4 && (strcmp(argv[2], "-a") != 0)) {
         fprintf(stderr, "Wrong command");
         exit(1);
     }
@@ -41,7 +40,7 @@ int main(int argc, const char * argv[]) {
         strcpy(path,argv[2]);
     }
 
-    if (path[0] != '/'){
+    if (path[0] != '/') {
         fprintf(stderr, "This is not an absolute path!");
         exit(1);
     }
@@ -54,14 +53,15 @@ int main(int argc, const char * argv[]) {
     }
 
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
-    void *inodes = disk + 1024* gd->bg_inode_table;
+    void *inodes = disk + 1024 * gd->bg_inode_table;
     int inode_num = get_inode_num(path, inodes, disk);
 
     if (inode_num == -1) {
+        perror("The directory does not exist.");
         return ENOENT;
     }
-    struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num -1));
-    if (inode -> i_size != 0){
+    struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
+    if (inode -> i_size != 0) {
         int inode_block_num;
         int count;
         char *name;
@@ -69,7 +69,7 @@ int main(int argc, const char * argv[]) {
         struct ext2_dir_entry_2 *entry;
         inode_block_num = 0;
 
-        for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++){
+        for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
             count = 0;
             check = 0;
             if (inode->i_block[inode_block_num] != 0) {
@@ -80,7 +80,7 @@ int main(int argc, const char * argv[]) {
                     check ++;
                     name = malloc(sizeof(char) * entry->name_len);
                     strncpy(name, entry->name, entry->name_len);
-                    //"-a"
+
                     if (argc == 4) {
                         printf("%s", name);
                         if (entry->rec_len != 1024) {

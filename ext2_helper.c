@@ -1,6 +1,6 @@
 //
 //  ext2_helper.c
-//  
+//
 //
 //  Created by Zhujun Wang on 2016-07-27.
 //
@@ -30,12 +30,11 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
     token = strtok(path, "/");
     struct ext2_inode *inode;
     struct ext2_dir_entry_2 *entry;
-    
-    
+
     if (strcmp(path, "/") == 0){
         return cur_inode_num;
     }
-    
+
     new_inode_num = cur_inode_num;
     while (token != NULL){
         //printf("%s\n", token);
@@ -45,8 +44,8 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
             count = 0;
             inode_block_num = 0;
             int i;
-            for (i = 0; i < 12; i++){
-                while(count < 1024){
+            for (i = 0; i < 12; i ++) {
+                while (count < 1024) {
                     entry = (struct ext2_dir_entry_2*)(disk+1024 * inode->i_block[inode_block_num] + count);
                     count += entry->rec_len;
                     if (entry->file_type == EXT2_FT_DIR){
@@ -62,7 +61,7 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
             }
         }
         // check whether this token exists in entries of this inode
-        if (check_exist == -1){
+        if (check_exist == -1) {
             return -1;
         }
         token = strtok(NULL, "/");
@@ -70,32 +69,31 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
     if (check_exist == 0) {
         return new_inode_num;
     }
-    else{
+    else {
         return -1;
     }
-    
+
 }
 
-char *get_file_name(char *file_path){
-    int i;
-    char file_name[1024];
-    i = strlen(file_path) - 1;
-    while (i >= 0 && file_path[i] != '/') {pa
-        i--;
-    }
-    strncpy(file_name, file_path + i + 1, strlen(file_path) - i);
-    return file_name;
-}
-
-
-char *get_file_parent_path(char *file_path){
-    int i;
-    char file_parent_path[1024];
-    i = strlen(file_path) - 1;
-    while (i >= 0 && file_path[i] != '/') {
-        i--;
-    }
-    strncpy(file_parent_path, file_path, i +1);
-    return file_path_path;
-}
-
+// char *get_file_name(char *file_path){
+//     int i;
+//     char file_name[1024];
+//     i = strlen(file_path) - 1;
+//     while (i >= 0 && file_path[i] != '/') {
+//         i--;
+//     }
+//     strncpy(file_name, file_path + i + 1, strlen(file_path) - i);
+//     return file_name;
+// }
+//
+//
+// char *get_file_parent_path(char *file_path){
+//     int i;
+//     char file_parent_path[1024];
+//     i = strlen(file_path) - 1;
+//     while (i >= 0 && file_path[i] != '/') {
+//         i--;
+//     }
+//     strncpy(file_parent_path, file_path, i +1);
+//     return file_parent_path;
+// }
