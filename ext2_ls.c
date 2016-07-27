@@ -96,7 +96,7 @@ int main(int argc, const char * argv[]) {
     if (argc == 3) {
         path_len = strlen(argv[2]);
         path = malloc(path_len);
-        strcpy(path,argv[2]);
+        strcpy(path, argv[2]);
     }
 
     if (path[0] != '/'){
@@ -112,7 +112,7 @@ int main(int argc, const char * argv[]) {
     }
 
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
-    void *inodes = disk + 1024* gd->bg_inode_table;
+    void *inodes = disk + 1024 * gd->bg_inode_table;
     int inode_num = get_inode_num(path, inodes);
 
     if (inode_num == -1){
@@ -157,7 +157,7 @@ int main(int argc, const char * argv[]) {
                     }
                 }
             }
-            ß}
+            }
         }
     }
 
