@@ -62,7 +62,6 @@ int main(int argc, const char * argv[]) {
 
                 while (count < 1024) {
                     entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode -> i_block[inode_block_num] + count);
-                    // printf("HERE!!\n");
                     // if (entry == NULL) printf("NULL!!\n");
                     count += entry->rec_len;
                     check ++;
