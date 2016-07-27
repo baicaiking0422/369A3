@@ -17,34 +17,34 @@ int main(int argc, const char * argv[]){
         fprintf(stderr, "Usage: ext2_cp <image file name> <source file> <target path>\n");
         exit(1);
     }
-    
+
     int fd = open(argv[1], O_RDWR);
     int local_fd = open(argv[2], O_RDONLY);
     if (local_fd == -1) {
         perror(argv[2]);
         exit(ENOENT);
     }
-    
-    
-    
+
+
+
     int path_len;
     char *path;
     path_len = strlen(argv[3]);
     path = malloc(path_len);
     strcpy(path, argv[3]);
-    
+
     if (path[0] != '/') {
         fprintf(stderr, "This is not an absolute path!");
         exit(1);
     }
-    
+
     disk = mmap(NULL, 128 * 1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(disk == MAP_FAILED) {
         perror("mmap");
         exit(1);
     }
 
-    
+
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
     void *inodes = disk + 1024* gd->bg_inode_table;
 
@@ -55,15 +55,15 @@ int main(int argc, const char * argv[]){
     if (path[path_len - 1] == '/') {
         inode_num = get_inode_num(path, inodes, disk);
     }
-    
+
     if (path[path_len -1] != '/') {
         inode_num = get_inode_num(path, inodes, disk);
-        
+
         if (inode_num < 0) { // /ab/c c is a file
             <#statements#>
         }
     }
-    
+
     if (inode_num == -1) {
         return ENOENT;
     }
