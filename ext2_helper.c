@@ -74,7 +74,7 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
     }
 }
 
-char *get_file_name(char *file_path, char *file_name) {
+void get_file_name(char *file_path, char *file_name) {
     int i;
     i = strlen(file_path) - 1;
     while (i >= 0 && file_path[i] != '/') {
@@ -85,7 +85,7 @@ char *get_file_name(char *file_path, char *file_name) {
 }
 
 
-void *get_file_parent_path(char *file_path, char *file_parent_path){
+void get_file_parent_path(char *file_path, char *file_parent_path){
     int i;
     i = strlen(file_path) - 1;
     while (i >= 0 && file_path[i] != '/') {
