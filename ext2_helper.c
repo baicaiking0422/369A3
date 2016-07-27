@@ -28,6 +28,7 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
     char *token;
     int inode_block_num;
     token = strtok(path, "/");
+
     struct ext2_inode *inode;
     struct ext2_dir_entry_2 *entry;
 
@@ -36,8 +37,10 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
     }
 
     new_inode_num = cur_inode_num;
+
     while (token != NULL){
         //printf("%s\n", token);
+        check_exist = -1;
         inode = (struct ext2_inode *)(inodes + (new_inode_num - 1) * sizeof(struct ext2_inode));
         //inode->i_size?
         if (inode->i_size != 0) {
@@ -48,7 +51,7 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
                 while (count < 1024) {
                     entry = (struct ext2_dir_entry_2*)(disk+1024 * inode->i_block[inode_block_num] + count);
                     count += entry->rec_len;
-                    if (entry->file_type == EXT2_FT_DIR){
+                    //if (entry->file_type == EXT2_FT_DIR){
                         name = malloc(sizeof(char) * entry->name_len);
                         strncpy(name, entry->name, entry->name_len);
                         if (strcmp(token, name) == 0) {
@@ -56,7 +59,7 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
                             check_exist = 0;
                             break;
                         }
-                    }
+                    //}
                 }
             }
         }
@@ -74,23 +77,47 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
     }
 }
 
-void get_file_name(char *file_path, char *file_name) {
+ void get_file_name(char *file_path, char **file_name) {
+
     int i;
     i = strlen(file_path) - 1;
-    while (i >= 0 && file_path[i] != '/') {
+    if (file_path[i] != '/'){
+        while (i >= 0 && file_path[i] != '/') {
         i--;
     }
-    strncpy(file_name, file_path + i + 1, strlen(file_path) - i);
+        *file_name = malloc(sizeof(char) * (strlen(file_path) - i));
+        strncpy(*file_name, file_path + i + 1, strlen(file_path) - i);
+    }else{
+        while (i >= 0 && file_path[i-1] != '/') {
+        i--;
+    }
+        *file_name = malloc(sizeof(char) * (strlen(file_path) - i - 1));
+        strncpy(*file_name, file_path + i, strlen(file_path) - i - 1);
+    }
+
     //return file_name;
+
 }
 
 
-void get_file_parent_path(char *file_path, char *file_parent_path){
+
+void get_file_parent_path(char *file_path, char **file_parent_path){
     int i;
     i = strlen(file_path) - 1;
-    while (i >= 0 && file_path[i] != '/') {
-        i--;
+    if (file_path[i] != '/'){
+        while (i >= 0 && file_path[i] != '/') {
+            i--;
+        }
+
+        *file_parent_path = malloc(sizeof(char) * (i + 1));
+
+        strncpy(*file_parent_path, file_path, i +1);
+    }else{
+        while (i >= 0 && file_path[i - 1] != '/') {
+            i--;
+        }
+        *file_parent_path = malloc(sizeof(char) * (i + 1));
+        strncpy(*file_parent_path, file_path, i + 1);
     }
-    strncpy(file_parent_path, file_path, i +1);
-    //return file_parent_path;
-}
+    
+ }   //return file_parent_path;
