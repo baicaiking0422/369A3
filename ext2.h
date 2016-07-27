@@ -186,7 +186,7 @@ struct ext2_inode {
 #define EXT2_NAME_LEN 255
 
 /* WARNING: DO NOT use this struct, ext2_dir_entry_2 is the
- * one to use for the assignement */
+ * one to use for the assignment */
 struct ext2_dir_entry {
 	unsigned int   inode;    /* Inode number */
 	unsigned short rec_len;  /* Directory entry length */

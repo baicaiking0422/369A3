@@ -118,9 +118,7 @@ int main(int argc, const char * argv[]) {
     if (inode_num == -1){
         return ENOENT;
     }
-    struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table
-
-                                                     + sizeof(struct ext2_inode) * (inode_num -1));
+    struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num -1));
     if (inode -> i_size != 0){
         int inode_block_num;
         int count;
@@ -128,35 +126,35 @@ int main(int argc, const char * argv[]) {
         int check;
         struct ext2_dir_entry_2 *entry;
         inode_block_num = 0;
-        //
-        for (inode_block_num = 0; inode_block_num < 12; inode_block_num++){
+
+        for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++){
             count = 0;
             check = 0;
             if (inode->i_block[inode_block_num] != 0) {
 
-            while (count < 1024) {
-                entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[inode_block_num] + count);
-                count += entry->rec_len;
-                check ++;
-                name = malloc(sizeof(char) * entry->name_len);
-                strncpy(name, entry->name, entry->name_len);
-                //"-a"
-                if (argc == 4) {
-                    printf("%s", name);
-                    if (entry->rec_len != 1024) {
-                        printf("\n");
-                    }
-                }
-
-                else{
-                    if (check >= 3) {
+                while (count < 1024) {
+                    entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[inode_block_num] + count);
+                    count += entry->rec_len;
+                    check ++;
+                    name = malloc(sizeof(char) * entry->name_len);
+                    strncpy(name, entry->name, entry->name_len);
+                    //"-a"
+                    if (argc == 4) {
                         printf("%s", name);
                         if (entry->rec_len != 1024) {
                             printf("\n");
                         }
                     }
+
+                    else {
+                        if (check >= 3) {
+                            printf("%s", name);
+                            if (entry->rec_len != 1024) {
+                                printf("\n");
+                            }
+                        }
+                    }
                 }
-            }
             }
         }
     }
