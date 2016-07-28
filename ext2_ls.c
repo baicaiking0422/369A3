@@ -108,15 +108,14 @@ int main(int argc, const char * argv[]) {
                         else {
                             if (check >= 3) {
                                 printf("%s", name);
-                            if (entry -> rec_len != 1024) {
-                                printf("\n");
+                                if (entry -> rec_len != 1024) {
+                                    printf("\n");
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-    
-    } return 0;
-
+    }
+    return 0;
 }
