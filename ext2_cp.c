@@ -26,11 +26,15 @@ int main(int argc, const char * argv[]){
     }
     
     
-    
     int path_len;
+    int r_path;
+    char *record_path;
     char *path;
     path_len = strlen(argv[3]);
+    r_len = strlen(argv[3]);
+    record_path = malloc(r_len);
     path = malloc(path_len);
+    strcpy(record_path, argv[3]);
     strcpy(path, argv[3]);
     
     if (path[0] != '/') {
@@ -54,21 +58,24 @@ int main(int argc, const char * argv[]){
     int inode_num;
     char file_name[1024];
     char file_parent_path[1024];
-    if (path[path_len - 1] == '/') {
-        inode_num = get_inode_num(path, inodes, disk);
-    }
     
-    if (path[path_len -1] != '/') {
-        inode_num = get_inode_num(path, inodes, disk);
+    inode_num = get_inode_num(path, inodes, disk);
+    //check this inode with inode_num
+    struct ext2_inode *check_inode = (struct ext2_inode *)(disk +1024 * gd->bg_inode_table +
+                                                          sizeof(struct ext2_inode) * (inode_num - 1));
+    
+    // inode is file and already exist
+    if ((inode_num != -1) && (check_inode->i_mode & EXT2_S_IFREG || check_inode->i_mode & EXT2_S_IFLNK ) {
+        perror("This file name is existed");
+        exit(ENOENT);
+    }
         
-        if (inode_num < 0) { // /ab/c c is a file
-            <#statements#>
-        }
+    if(inode_num == -1){
+        
     }
     
-    if (inode_num == -1) {
-        return ENOENT;
-    }
+    struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
+    
 
 //main blanket
 }
