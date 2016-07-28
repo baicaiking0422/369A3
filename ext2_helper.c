@@ -63,6 +63,7 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
                 }
             }
         }
+        free(name);
         // check whether this token exists in entries of this inode
         if (check_exist == -1) {
             return -1;
