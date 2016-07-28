@@ -86,7 +86,6 @@ int main(int argc, const char * argv[]) {
         int check;
         struct ext2_dir_entry_2 *entry;
 
-    
             for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
                 count = 0;
                 check = 0;
