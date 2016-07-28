@@ -136,8 +136,8 @@ int *get_block_bitmap(void *block_info){
     int *block_bitmap = malloc(sizeof(int) * 128);
     int i;
     for (i = 0; i < 128; i++) {
-        char *byte = inode_info + (i / 8);
-        inode_bitmap[i] = (*byte >> (i % 8)) & 1;
+        char *byte = block_info + (i / 8);
+        block_bitmap[i] = (*byte >> (i % 8)) & 1;
     }
-    return inode_bitmap;
+    return block_bitmap;
 }
