@@ -1,22 +1,3 @@
-/* MODIFIED by Karen Reid for CSC369
- * to remove some of the unnecessary components */
-
-/* MODIFIED by Tian Ze Chen for CSC369
- * to clean up the code and fix some bugs */
-
-/*
- * Copyright (C) 1992, 1993, 1994, 1995
- * Remy Card (card@masi.ibp.fr)
- * Laboratoire MASI - Institut Blaise Pascal
- * Universite Pierre et Marie Curie (Paris VI)
- *
- *  from
- *
- *  linux/include/linux/minix_fs.h
- *
- *  Copyright (C) 1991, 1992  Linus Torvalds
- */
-
 #ifndef CSC369A3_EXT2_FS_H
 #define CSC369A3_EXT2_FS_H
 
@@ -97,15 +78,10 @@ struct ext2_super_block {
 	unsigned int   s_reserved[190]; /* Padding to the end of the block */
 };
 
-
-
-
-
 /*
  * Structure of a blocks group descriptor
  */
-struct ext2_group_desc
-{
+struct ext2_group_desc {
 	unsigned int   bg_block_bitmap;      /* Blocks bitmap block */
 	unsigned int   bg_inode_bitmap;      /* Inodes bitmap block */
 	unsigned int   bg_inode_table;       /* Inodes table block */
@@ -116,14 +92,9 @@ struct ext2_group_desc
 	unsigned int   bg_reserved[3];
 };
 
-
-
-
-
 /*
  * Structure of an inode on the disk
  */
-
 struct ext2_inode {
 	unsigned short i_mode;        /* File mode */
 	unsigned short i_uid;         /* Low 16 bits of Owner Uid */
@@ -148,7 +119,6 @@ struct ext2_inode {
 /*
  * Type field for file mode
  */
-
 /* #define EXT2_S_IFSOCK 0xC000 */ /* socket */
 #define    EXT2_S_IFLNK  0xA000    /* symbolic link */
 #define    EXT2_S_IFREG  0x8000    /* regular file */
@@ -160,7 +130,6 @@ struct ext2_inode {
 /*
  * Special inode numbers
  */
-
 /* #define EXT2_BAD_INO          1 */ /* Bad blocks inode */
 #define    EXT2_ROOT_INO         2    /* Root inode */
 /* #define EXT4_USR_QUOTA_INO    3 */ /* User quota inode */
@@ -175,24 +144,18 @@ struct ext2_inode {
 /* First non-reserved inode for old ext2 filesystems */
 #define EXT2_GOOD_OLD_FIRST_INO 11
 
-
-
-
-
 /*
  * Structure of a directory entry
  */
-
 #define EXT2_NAME_LEN 255
-
 /* WARNING: DO NOT use this struct, ext2_dir_entry_2 is the
  * one to use for the assignment */
-struct ext2_dir_entry {
-	unsigned int   inode;    /* Inode number */
-	unsigned short rec_len;  /* Directory entry length */
-	unsigned short name_len; /* Name length */
-	char           name[];   /* File name, up to EXT2_NAME_LEN */
-};
+// struct ext2_dir_entry {
+// 	unsigned int   inode;    /* Inode number */
+// 	unsigned short rec_len;  /* Directory entry length */
+// 	unsigned short name_len; /* Name length */
+// 	char           name[];   /* File name, up to EXT2_NAME_LEN */
+// };
 
 /*
  * The new version of the directory entry.  Since EXT2 structures are
@@ -200,7 +163,6 @@ struct ext2_dir_entry {
  * bigger than 255 chars, it's safe to reclaim the extra byte for the
  * file_type field.
  */
-
 struct ext2_dir_entry_2 {
 	unsigned int   inode;     /* Inode number */
 	unsigned short rec_len;   /* Directory entry length */
@@ -213,7 +175,6 @@ struct ext2_dir_entry_2 {
  * Ext2 directory file types.  Only the low 3 bits are used.  The
  * other bits are reserved for now.
  */
-
 #define    EXT2_FT_UNKNOWN  0    /* Unknown File Type */
 #define    EXT2_FT_REG_FILE 1    /* Regular File */
 #define    EXT2_FT_DIR      2    /* Directory File */
@@ -222,11 +183,6 @@ struct ext2_dir_entry_2 {
 /* #define EXT2_FT_FIFO     5 */ /* Buffer File */
 /* #define EXT2_FT_SOCK     6 */ /* Socket File */
 #define    EXT2_FT_SYMLINK  7    /* Symbolic Link */
-
 #define    EXT2_FT_MAX      8
-
-
-
-
 
 #endif

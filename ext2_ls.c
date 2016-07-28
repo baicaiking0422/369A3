@@ -69,9 +69,8 @@ int main(int argc, const char * argv[]) {
         return ENOENT;
     }
 
-    
     struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
-    
+
     if (inode->i_mode & EXT2_S_IFREG || inode->i_mode & EXT2_S_IFLNK){
         char *file_name;
         get_file_name(record_path, &file_name);
@@ -116,7 +115,7 @@ int main(int argc, const char * argv[]) {
                 }
             }
         }
-    
+
     } return 0;
 
 }
