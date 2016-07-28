@@ -81,16 +81,14 @@ void get_file_name(char *file_path, char *file_name) {
         i--;
     }
     strncpy(file_name, file_path + i + 1, strlen(file_path) - i);
-    //return file_name;
+
 }
 
-
-void get_file_parent_path(char *file_path, char *file_parent_path){
+void get_file_parent_path(char *file_path, char *file_parent_path) {
     int i;
     i = strlen(file_path) - 1;
     while (i >= 0 && file_path[i] != '/') {
         i--;
     }
-    strncpy(file_parent_path, file_path, i +1);
-    //return file_parent_path;
+    strncpy(file_parent_path, file_path, i + 1);
 }

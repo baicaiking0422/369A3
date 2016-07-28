@@ -46,6 +46,15 @@ int main(int argc, const char * argv[]) {
         exit(EEXIST);
     }
 
+    char parent_path[1024];
+    get_file_parent_path(path, parent_path);
+    inode_num = get_inode_num(parent_path, inodes, disk);
+
+    if (inode_num == -1) {
+        perror("The directory does not exist.");
+        exit(ENOENT);
+    }
+
     struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
     if (inode -> i_size != 0) {
         int inode_block_num;
