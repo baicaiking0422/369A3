@@ -51,6 +51,10 @@ int main(int argc, const char * argv[]){
 
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
     void *inodes = disk + 1024* gd->bg_inode_table;
+    int *inode_bitmap = 
+    
+    struct ext2_inode *inode;
+    struct ext2_inode *check_inode;
 
     // get inode number from absolute path
     //check if already dir
@@ -58,23 +62,46 @@ int main(int argc, const char * argv[]){
     int inode_num;
     char *file_name;
     char *file_parent_path;
+    char *new_path;
+    int new_path_len;
+    int new_inode = -1;
+    int i;
+    for (i = 0; i < 32; i++) {
+        if (<#condition#>) {
+            <#statements#>
+        }
+    }
     
     inode_num = get_inode_num(path, inodes, disk);
     //check this inode with inode_num
-    struct ext2_inode *check_inode = (struct ext2_inode *)(disk +1024 * gd->bg_inode_table +
+    check_inode = (struct ext2_inode *)(disk +1024 * gd->bg_inode_table +
                                                           sizeof(struct ext2_inode) * (inode_num - 1));
-    
     // inode is file and already exist
     if ((inode_num != -1) && (check_inode->i_mode & EXT2_S_IFREG || check_inode->i_mode & EXT2_S_IFLNK ) {
-        perror("This file name is existed");
+        perror("This file name existed");
         exit(ENOENT);
     }
+    // not exist
+    if (inode_num == -1){
+        get_file_parent_path(record_path, file_name);
+        get_file_name(record_path, file_parent_path); //record file name
+        new_path = malloc(strlen(file_parent_path));
+        strcpy(new_path, file_parent_path); // record new path
         
-    if(inode_num == -1){
-        
+        inode_num = get_inode_num(file_parent_path, inodes, disk);
+        inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
+        //check parent path
+        if ((inode_num == -1) ||
+                            ((inode_num != -1) && (inode->i_mode & EXT2_S_IFREG || inode->i_mode & EXT2_S_IFLNK ))) {
+            fprintf(stderr, "Illegal target path for copy\n");
+            return ENOENT;
+        }else{
+            //new node
+            
+            
     }
     
-    struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
+
     
 
 
