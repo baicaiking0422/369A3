@@ -157,3 +157,18 @@ int *get_free_block(int *block_bitmap, int needed_num_blocks){
     }
     return new_blocks;
 }
+
+void set_inode_bitmap(void *inode_info, int inode_num, int bit){
+    int byte = inode_num / 8;
+    int i_bit = inode_num % 8;
+    char *change = inode_info + byte;
+    *change = (*change & ~(1 << i_bit)) | (bit << i_bit);
+}
+
+
+void set_block_bitmap(void *block_info, int block_num, int bit){
+    int byte = block_num / 8;
+    int b_bit = block_num % 8;
+    char *change = block_info + byte;
+    *change = (*change & ~(1 << b_bit)) | (bit << b_bit);
+}
