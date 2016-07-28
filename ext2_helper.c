@@ -141,3 +141,34 @@ int *get_block_bitmap(void *block_info){
     }
     return block_bitmap;
 }
+
+int *get_free_block(int *block_bitmap, int needed_num_blocks){
+    int i, j;
+    j = 0;
+    int *new_blocks = malloc(sizeof(int) * needed_num_blocks);
+    for (i = 0; i < needed_num_blocks; i++) {
+        while (block_bitmap[j] != 0) {
+            j++;
+            if (j == 128) {
+                return NULL;
+            }
+        }
+        new_blocks[i] = j;
+    }
+    return new_blocks;
+}
+
+void set_inode_bitmap(void *inode_info, int inode_num, int bit){
+    int byte = inode_num / 8;
+    int i_bit = inode_num % 8;
+    char *change = inode_info + byte;
+    *change = (*change & ~(1 << i_bit)) | (bit << i_bit);
+}
+
+
+void set_block_bitmap(void *block_info, int block_num, int bit){
+    int byte = block_num / 8;
+    int b_bit = block_num % 8;
+    char *change = block_info + byte;
+    *change = (*change & ~(1 << b_bit)) | (bit << b_bit);
+}
