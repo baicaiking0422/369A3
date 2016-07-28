@@ -141,3 +141,19 @@ int *get_block_bitmap(void *block_info){
     }
     return block_bitmap;
 }
+
+int *get_free_block(int *block_bitmap, int needed_num_blocks){
+    int i, j;
+    j = 0;
+    int *new_blocks = malloc(sizeof(int) * needed_num_blocks);
+    for (i = 0; i < needed_num_blocks; i++) {
+        while (block_bitmap[j] != 0) {
+            j++;
+            if (j == 128) {
+                return NULL;
+            }
+        }
+        new_blocks[i] = j;
+    }
+    return new_blocks;
+}
