@@ -121,3 +121,23 @@ void get_file_parent_path(char *file_path, char **file_parent_path){
     }
 
  }   //return file_parent_path;
+
+int *get_inode_bitmap(void *inode_info){
+    int *inode_bitmap = malloc(sizeof(int) * 32);
+    int i;
+    for (i = 0; i < 32; i++) {
+        char *byte = inode_info + (i / 8);
+        inode_bitmap[i] = (*byte >> (i % 8)) & 1;
+    }
+    return inode_bitmap;
+}
+
+int *get_block_bitmap(void *block_info){
+    int *block_bitmap = malloc(sizeof(int) * 128);
+    int i;
+    for (i = 0; i < 128; i++) {
+        char *byte = inode_info + (i / 8);
+        inode_bitmap[i] = (*byte >> (i % 8)) & 1;
+    }
+    return inode_bitmap;
+}
