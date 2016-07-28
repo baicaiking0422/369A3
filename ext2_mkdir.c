@@ -47,7 +47,7 @@ int main(int argc, const char * argv[]) {
     }
 
     char parent_path[1024];
-    get_file_parent_path(path, parent_path);
+    get_file_parent_path(path, (char **)parent_path);
     inode_num = get_inode_num(parent_path, inodes, disk);
 
     if (inode_num == -1) {

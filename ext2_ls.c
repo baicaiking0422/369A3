@@ -27,17 +27,25 @@ int main(int argc, const char * argv[]) {
     int fd = open(argv[1], O_RDWR);
     int path_len;
     char *path;
+    char *record_path;
+    int r_path;
 
     if (argc == 4 && (strcmp(argv[2], "-a") == 0)) {
         path_len = strlen(argv[3]);
+        r_path = strlen(argv[3]);
         path = malloc(path_len);
+        record_path = malloc(r_path);
         strcpy(path, argv[3]);
+        strcpy(record_path, argv[3]);
     }
 
     if (argc == 3) {
         path_len = strlen(argv[2]);
+        r_path = strlen(argv[2]);
         path = malloc(path_len);
-        strcpy(path,argv[2]);
+        record_path = malloc(r_path);
+        strcpy(path, argv[2]);
+        strcpy(record_path, argv[2]);
     }
 
     if (path[0] != '/') {
@@ -54,43 +62,53 @@ int main(int argc, const char * argv[]) {
 
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
     void *inodes = disk + 1024 * gd->bg_inode_table;
-    int inode_num = get_inode_num(path, inodes, disk);
 
+    int inode_num = get_inode_num(path, inodes, disk);
     if (inode_num == -1) {
-        perror("The directory does not exist.");
+        fprintf(stderr, "The directory or file does not exist.\n");
         return ENOENT;
     }
+
+    
     struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
+    
+    if (inode->i_mode & EXT2_S_IFREG || inode->i_mode & EXT2_S_IFLNK){
+        char *file_name;
+        get_file_name(record_path, &file_name);
+        printf("%s\n", file_name);
+        return 0;
+    }
+
     if (inode -> i_size != 0) {
         int inode_block_num;
         int count;
         char *name;
         int check;
         struct ext2_dir_entry_2 *entry;
-        inode_block_num = 0;
 
-        for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
-            count = 0;
-            check = 0;
-            if (inode->i_block[inode_block_num] != 0) {
+    
+            for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
+                count = 0;
+                check = 0;
+                if (inode->i_block[inode_block_num] != 0) {
 
-                while (count < 1024) {
-                    entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode -> i_block[inode_block_num] + count);
-                    count += entry->rec_len;
-                    check ++;
-                    name = malloc(sizeof(char) * entry->name_len);
-                    strncpy(name, entry->name, entry->name_len);
+                    while (count < 1024) {
+                        entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode -> i_block[inode_block_num] + count);
+                        count += entry->rec_len;
+                        check ++;
+                        name = malloc(sizeof(char) * entry->name_len);
+                        strncpy(name, entry->name, entry->name_len);
 
-                    if (argc == 4) {
-                        printf("%s", name);
-                        if (entry->rec_len != 1024) {
-                            printf("\n");
-                        }
-                    }
-
-                    else {
-                        if (check >= 3) {
+                        if (argc == 4) {
                             printf("%s", name);
+                            if (entry->rec_len != 1024) {
+                                printf("\n");
+                            }
+                        }
+
+                        else {
+                            if (check >= 3) {
+                                printf("%s", name);
                             if (entry -> rec_len != 1024) {
                                 printf("\n");
                             }
@@ -99,8 +117,7 @@ int main(int argc, const char * argv[]) {
                 }
             }
         }
-    }
-
-    return 0;
+    
+    } return 0;
 
 }

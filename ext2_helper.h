@@ -31,12 +31,12 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk);
  * Seperate file path and get the file name.
  *
  */
-void get_file_name(char *file_path, char *file_name);
+void get_file_name(char *file_path, char **file_name);
 
 /*
  * Seperate file path and get the parent path of this file.
  *
  */
-void get_file_parent_path(char *file_path, char *file_parent_path);
+void get_file_parent_path(char *file_path, char **file_parent_path);
 
 #endif /* ext2_helper_h */
