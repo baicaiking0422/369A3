@@ -39,4 +39,9 @@ void get_file_name(char *file_path, char **file_name);
  */
 void get_file_parent_path(char *file_path, char **file_parent_path);
 
+int *get_inode_bitmap(void *inode_info);
+int *get_block_bitmap(void *block_info);
+int *get_free_block(int *block_bitmap, int needed_num_blocks);
+void set_inode_bitmap(void *inode_info, int inode_num, int bit);
+void set_block_bitmap(void *block_info, int block_num, int bit);
 #endif /* ext2_helper_h */
