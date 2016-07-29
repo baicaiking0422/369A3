@@ -37,10 +37,21 @@ int main(int argc, const char * argv[]){
     char *path;
     path_len = strlen(argv[3]);
     r_path = strlen(argv[3]);
-    record_path = malloc(r_path);
-    path = malloc(path_len);
-    strcpy(record_path, argv[3]);
-    strcpy(path, argv[3]);
+    record_path = malloc(r_path+1);
+    path = malloc(path_len+1);
+    strncpy(record_path, argv[3],r_path);
+    record_path[r_path] = '\0';
+    strncpy(path, argv[3],path_len);
+    path[path_len] = '\0';
+    
+    //record local filename
+    int lc_len;
+    char *lc_name;
+    lc_len = strlen(argv[2]);
+    lc_name = malloc(sizeof(char) * (lc_len + 1));
+    strncpy(lc_name, argv[2], lc_len);
+    lc_name[lc_len] = '\0';
+    
 
     if (path[0] != '/') {
         fprintf(stderr, "This is not an absolute path!");
@@ -67,36 +78,55 @@ int main(int argc, const char * argv[]){
     // get inode number from absolute path
     //check if already dir
     // /a/c/ /a/c are different
-    int inode_num;
+    int inode_num, inode_num_p type_add;
     char *file_name;
     char *file_parent_path;
     char *new_path;
+    type_add = 1;
     //int new_path_len;
     
     inode_num = get_inode_num(path, inodes, disk);
-    //check this inode with inode_num
+    //inode for full path
     check_inode = (struct ext2_inode *)(disk +1024 * gd->bg_inode_table +
                                                           sizeof(struct ext2_inode) * (inode_num - 1));
     // inode is file and already exist
-    if ((inode_num != -1) && (check_inode->i_mode & EXT2_S_IFREG || check_inode->i_mode & EXT2_S_IFLNK )) {
-        perror("This file name existed");
-        exit(ENOENT);
+    if (inode_num != -1) {
+        if (check_inode->i_mode & EXT2_S_IFREG || check_inode->i_mode & EXT2_S_IFLNK ){
+            perror("This file name existed");
+            exit(ENOENT);
+        }
+        else if (check_entry_file(lc_name, check_inode, disk) == -1) {
+            perror("This file name existed");
+            exit(ENOENT);
+        }
+        type_add = 0;
     }
+    
     // not exist
-    if (inode_num == -1){
-        get_file_parent_path(record_path, &file_name);
-        get_file_name(record_path, &file_parent_path); //record file name
-        new_path = malloc(strlen(file_parent_path));
-        strcpy(new_path, file_parent_path); // record new path
+    //if (inode_num == -1){
+    get_file_parent_path(record_path, &file_parent_path);
+    get_file_name(record_path, &file_name); //record file name
+    new_path = malloc(strlen(file_parent_path));
+    strcpy(new_path, file_parent_path); // record new path
         
-        inode_num = get_inode_num(file_parent_path, inodes, disk);
-        inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
+    inode_num_p = get_inode_num(new_path, inodes, disk);
+    if ((inode_num_p != -1) && (record_path[strlen(record_path) - 1] == '/')) {
+        fprintf(stderr, "Illegal target path for copy1\n");
+        return ENOENT;
+    }
+    // inode for parent path
+    inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
         //check parent path
-        if ((inode_num == -1) ||
-                            ((inode_num != -1) && (inode->i_mode & EXT2_S_IFREG || inode->i_mode & EXT2_S_IFLNK ))) {
-            fprintf(stderr, "Illegal target path for copy\n");
-            return ENOENT;
-        }else{
+    //printf("%d\n",inode_num_p);
+    if ((inode_num_p == -1) ||
+                            ((inode_num_p != -1) && (inode->i_mode & EXT2_S_IFREG))) {
+        fprintf(stderr, "Illegal target path for copy2\n");
+        return ENOENT;
+    }
+    
+    
+        
+        //else{ keyi
             //get a free new inode from inode bitmap
             int new_inode = -1;
             int i;
@@ -106,6 +136,7 @@ int main(int argc, const char * argv[]){
                     break;
                 }
             }
+            //printf("%d\n",new_inode);
             //check new node for copy file
             if  (new_inode == -1){ // no free inode to assign
                 fprintf(stderr, "No free inode\n");
@@ -141,7 +172,6 @@ int main(int argc, const char * argv[]){
                     record += 1024;
                 }
             }
-            
             //assign new node
             struct ext2_inode *n_inode = inodes + sizeof(struct ext2_inode) * new_inode;
             //new_inode num = new_inode + 1
@@ -184,12 +214,9 @@ int main(int argc, const char * argv[]){
                 }
                 
             }
-            return 0;
-    }
+        //else}
     
 
-    
-
-    }
+   //if }return 0;
 //main blanket
 }
