@@ -110,15 +110,19 @@ void get_file_parent_path(char *file_path, char **file_parent_path){
             i--;
         }
 
-        *file_parent_path = malloc(sizeof(char) * (i + 1));
+        *file_parent_path = malloc(sizeof(char) * (i + 1 + 1));
 
         strncpy(*file_parent_path, file_path, i +1);
+        (*file_parent_path)[i+1] = '\0';
+        
     }else{
-        while (i >= 0 && file_path[i - 1] != '/') {
+        i--;
+        while (i >= 0 && file_path[i] != '/') {
             i--;
         }
-        *file_parent_path = malloc(sizeof(char) * (i + 1));
+        *file_parent_path = malloc(sizeof(char) * (i + 1 + 1));
         strncpy(*file_parent_path, file_path, i + 1);
+        (*file_parent_path)[i+1]= '\0';
     }
 
  }   //return file_parent_path;
