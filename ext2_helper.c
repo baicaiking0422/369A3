@@ -182,9 +182,7 @@ void set_block_bitmap(void *block_info, int block_num, int bit){
 int check_entry_file(char *lc_file, struct ext2_inode *check_inode, unsigned char *disk){
     int i, count;
     char *name;
-    //struct ext2_inode *check_inode;
     struct ext2_dir_entry_2 *entry;
-    //check_inode = (struct ext2_inode *)(inodes + (inode_num - 1) * sizeof(struct ext2_inode));
     
     if (check_inode->i_size != 0) {
         count = 0;
