@@ -48,10 +48,10 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
             inode_block_num = 0;
             int i;
             for (i = 0; i < 12; i ++) {
-                while (count < 1024) {
-                    entry = (struct ext2_dir_entry_2*)(disk+1024 * inode->i_block[inode_block_num] + count);
-                    count += entry->rec_len;
-                    //if (entry->file_type == EXT2_FT_DIR){
+                if (inode->i_block[i] != 0) {
+                    while (count < 1024) {
+                        entry = (struct ext2_dir_entry_2*)(disk+1024 * inode->i_block[inode_block_num] + count);
+                        count += entry->rec_len;
                         name = malloc(sizeof(char) * entry->name_len);
                         strncpy(name, entry->name, entry->name_len);
                         if (strcmp(token, name) == 0) {
@@ -59,8 +59,9 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
                             check_exist = 0;
                             break;
                         }
-                    //}
+                    }
                 }
+                
             }
         }
         free(name);
@@ -176,4 +177,30 @@ void set_block_bitmap(void *block_info, int block_num, int bit){
     int b_bit = block_num % 8;
     char *change = block_info + byte;
     *change = (*change & ~(1 << b_bit)) | (bit << b_bit);
+}
+
+int check_entry_file(char *lc_file, struct ext2_inode *check_inode, unsigned char *disk){
+    int i, count;
+    char *name;
+    struct ext2_dir_entry_2 *entry;
+    if (check_inode->i_size != 0) {
+        count = 0;
+        for (i = 0; i < 12; i++) {
+            if (check_inode->i_block[i] != 0) {
+                while (count < 1024) {
+                    entry = (struct ext2_dir_entry_2*)(disk+1024 * check_inode->i_block[i] + count);
+                    count += entry->rec_len;
+                    if (entry->file_type == EXT2_FT_REG_FILE){
+                        name = malloc(sizeof(char) * entry->name_len);
+                        strncpy(name, entry->name, entry->name_len);
+                        if (strcmp(lc_file, name) == 0) {
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+    return 1;
 }
