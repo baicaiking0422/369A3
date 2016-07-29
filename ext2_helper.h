@@ -44,5 +44,5 @@ int *get_block_bitmap(void *block_info);
 int *get_free_block(int *block_bitmap, int needed_num_blocks);
 void set_inode_bitmap(void *inode_info, int inode_num, int bit);
 void set_block_bitmap(void *block_info, int block_num, int bit);
-int check_entry_file(char *lc_file, struct ext2_inode *check_inode, unsigned char *disk);
+int check_entry_file(char *lc_file, int inode_num, void *inodes, unsigned char *disk);
 #endif /* ext2_helper_h */

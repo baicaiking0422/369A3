@@ -26,7 +26,7 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
     int count;
     char *name;
     char *token;
-    int inode_block_num;
+    //int inode_block_num;
     token = strtok(path, "/");
 
     struct ext2_inode *inode;
@@ -45,12 +45,11 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
         //inode->i_size?
         if (inode->i_size != 0) {
             count = 0;
-            inode_block_num = 0;
             int i;
             for (i = 0; i < 12; i ++) {
                 if (inode->i_block[i] != 0) {
                     while (count < 1024) {
-                        entry = (struct ext2_dir_entry_2*)(disk+1024 * inode->i_block[inode_block_num] + count);
+                        entry = (struct ext2_dir_entry_2*)(disk+1024 * inode->i_block[i] + count);
                         count += entry->rec_len;
                         name = malloc(sizeof(char) * entry->name_len);
                         strncpy(name, entry->name, entry->name_len);
@@ -179,16 +178,19 @@ void set_block_bitmap(void *block_info, int block_num, int bit){
     *change = (*change & ~(1 << b_bit)) | (bit << b_bit);
 }
 
-int check_entry_file(char *lc_file, struct ext2_inode *check_inode, unsigned char *disk){
+int check_entry_file(char *lc_file, int inode_num, void *inodes, unsigned char *disk){
     int i, count;
     char *name;
+    struct ext2_inode *check_inode;
     struct ext2_dir_entry_2 *entry;
+    check_inode = (struct ext2_inode *)(inodes + (inode_num - 1) * sizeof(struct ext2_inode));
+    
     if (check_inode->i_size != 0) {
         count = 0;
         for (i = 0; i < 12; i++) {
             if (check_inode->i_block[i] != 0) {
                 while (count < 1024) {
-                    entry = (struct ext2_dir_entry_2*)(disk+1024 * check_inode->i_block[i] + count);
+                    entry = (struct ext2_dir_entry_2*)(disk + 1024 * check_inode->i_block[i] + count);
                     count += entry->rec_len;
                     if (entry->file_type == EXT2_FT_REG_FILE){
                         name = malloc(sizeof(char) * entry->name_len);

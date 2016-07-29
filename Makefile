@@ -23,4 +23,4 @@ ext2_cp.o : ext2_cp.c ext2.h ext2_helper.h
 	gcc ${FLAGS} -c ext2_cp.c
 
 clean :
-	rm *.o ext2_ls
+	rm *.o ext2_ls ext2_cp ext2_mkdir
