@@ -33,19 +33,23 @@ int main(int argc, const char * argv[]) {
     if (argc == 4 && (strcmp(argv[2], "-a") == 0)) {
         path_len = strlen(argv[3]);
         r_path = strlen(argv[3]);
-        path = malloc(path_len);
-        record_path = malloc(r_path);
-        strcpy(path, argv[3]);
-        strcpy(record_path, argv[3]);
+        record_path = malloc(r_path+1);
+        path = malloc(path_len+1);
+        strncpy(record_path, argv[3],r_path);
+        record_path[r_path] = '\0';
+        strncpy(path, argv[3],path_len);
+        path[path_len] = '\0';
     }
 
     if (argc == 3) {
         path_len = strlen(argv[2]);
         r_path = strlen(argv[2]);
-        path = malloc(path_len);
-        record_path = malloc(r_path);
-        strcpy(path, argv[2]);
-        strcpy(record_path, argv[2]);
+        record_path = malloc(r_path+1);
+        path = malloc(path_len+1);
+        strncpy(record_path, argv[2],r_path);
+        record_path[r_path] = '\0';
+        strncpy(path, argv[2],path_len);
+        path[path_len] = '\0';
     }
 
     if (path[0] != '/') {
@@ -94,8 +98,9 @@ int main(int argc, const char * argv[]) {
                         entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode -> i_block[inode_block_num] + count);
                         count += entry->rec_len;
                         check ++;
-                        name = malloc(sizeof(char) * entry->name_len);
+                        name = malloc(sizeof(char) * (entry->name_len));
                         strncpy(name, entry->name, entry->name_len);
+                        
 
                         if (argc == 4) {
                             printf("%s", name);
