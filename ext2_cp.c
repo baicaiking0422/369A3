@@ -96,7 +96,7 @@ int main(int argc, const char * argv[]){
             perror("This file name existed.\n");
             exit(ENOENT);
         }
-        else if (check_entry_file(lc_name, inode_num, inodes, disk) == -1) {
+        else if (check_entry_file(lc_name, inode_num, inodes) == -1) {
             perror("This file name existed2.\n");
             exit(ENOENT);
         }
@@ -115,7 +115,7 @@ int main(int argc, const char * argv[]){
             fprintf(stderr, "Illegal target path for copy1\n");
             return ENOENT;
         }
-        
+
     // inode for parent path
         inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
         //check parent path
@@ -126,14 +126,6 @@ int main(int argc, const char * argv[]){
             return ENOENT;
         }
     }
-
-<<<<<<< HEAD
-
-
-=======
-
-
->>>>>>> refs/remotes/origin/master
         //else{ keyi
             //get a free new inode from inode bitmap
             int new_inode = -1;
