@@ -25,11 +25,11 @@ int main(int argc, const char * argv[]){
         fprintf(stderr, "This file does not exist.\n");
         return ENOENT;
     }
-    
+
     //local file size and required blocks
     int file_size = lseek(local_fd, 0, SEEK_END);
     int file_block_num = (file_size - 1) / 1024 + 1;
-    
+
     //record target path
     int path_len;
     int r_path;
@@ -43,7 +43,7 @@ int main(int argc, const char * argv[]){
     record_path[r_path] = '\0';
     strncpy(path, argv[3],path_len);
     path[path_len] = '\0';
-    
+
     //record local filename
     int lc_len;
     char *lc_name;
@@ -51,7 +51,7 @@ int main(int argc, const char * argv[]){
     lc_name = malloc(sizeof(char) * (lc_len + 1));
     strncpy(lc_name, argv[2], lc_len);
     lc_name[lc_len] = '\0';
-    
+
 
     if (path[0] != '/') {
         fprintf(stderr, "This is not an absolute path!");
@@ -67,24 +67,24 @@ int main(int argc, const char * argv[]){
 
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
     void *inodes = disk + 1024* gd->bg_inode_table;
-    
+
     //get inode and block bitmap
     int *inode_bitmap = get_inode_bitmap(disk + 1024 * gd->bg_inode_bitmap);
     int *block_bitmap = get_block_bitmap(disk + 1024 * gd->bg_block_bitmap);
-    
+
     struct ext2_inode *inode;
     struct ext2_inode *check_inode;
 
     // get inode number from absolute path
     //check if already dir
     // /a/c/ /a/c are different
-    int inode_num, inode_num_p type_add;
+    int inode_num, inode_num_p, type_add;
     char *file_name;
     char *file_parent_path;
     char *new_path;
     type_add = 1;
     //int new_path_len;
-    
+
     inode_num = get_inode_num(path, inodes, disk);
     //inode for full path
     check_inode = (struct ext2_inode *)(disk +1024 * gd->bg_inode_table +
@@ -101,14 +101,14 @@ int main(int argc, const char * argv[]){
         }
         type_add = 0;
     }
-    
+
     // not exist
     //if (inode_num == -1){
     get_file_parent_path(record_path, &file_parent_path);
     get_file_name(record_path, &file_name); //record file name
     new_path = malloc(strlen(file_parent_path));
     strcpy(new_path, file_parent_path); // record new path
-        
+
     inode_num_p = get_inode_num(new_path, inodes, disk);
     if ((inode_num_p != -1) && (record_path[strlen(record_path) - 1] == '/')) {
         fprintf(stderr, "Illegal target path for copy1\n");
@@ -123,9 +123,9 @@ int main(int argc, const char * argv[]){
         fprintf(stderr, "Illegal target path for copy2\n");
         return ENOENT;
     }
-    
-    
-        
+
+
+
         //else{ keyi
             //get a free new inode from inode bitmap
             int new_inode = -1;
@@ -142,7 +142,7 @@ int main(int argc, const char * argv[]){
                 fprintf(stderr, "No free inode\n");
                 exit(1);
             }
-            
+
             //get free blocks from block bitmap
             int *free_blocks = get_free_block(block_bitmap, file_block_num);
             //check free_blocks enough
@@ -150,7 +150,7 @@ int main(int argc, const char * argv[]){
                 fprintf(stderr, "Not enough blocks in the disk\n");
                 exit(1);
             }
-            
+
             //copy local file
             unsigned char* local_file = mmap(NULL, file_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, local_fd, 0);
             if(local_file == MAP_FAILED) {
@@ -183,7 +183,7 @@ int main(int argc, const char * argv[]){
                 n_inode->i_block[i] = free_blocks[i] + 1;
             }
             set_inode_bitmap(disk + 1024 * gd->bg_inode_bitmap, new_inode, 1);
-            
+
             //new entry for new file in parent dir
             int count;
             int check;
@@ -207,15 +207,15 @@ int main(int argc, const char * argv[]){
                     n_entry->file_type = EXT2_FT_REG_FILE;
                     strncpy((void *)n_entry + 8, file_name, strlen(file_name));
                     set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, inode->i_block[j], 1);
-                    
+
                     inode->i_size += 1024;
                     inode->i_blocks += 2;
                     break;
                 }
-                
+
             }
         //else}
-    
+
 
    //if }return 0;
 //main blanket
