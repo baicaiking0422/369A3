@@ -91,41 +91,49 @@ int main(int argc, const char * argv[]){
                                                           sizeof(struct ext2_inode) * (inode_num - 1));
     // inode is file and already exist
     if (inode_num != -1) {
+        // /abc/a
         if (check_inode->i_mode & EXT2_S_IFREG || check_inode->i_mode & EXT2_S_IFLNK ){
-            perror("This file name existed");
+            perror("This file name existed.\n");
             exit(ENOENT);
         }
-        else if (check_entry_file(lc_name, check_inode, disk) == -1) {
-            perror("This file name existed");
+        else if (check_entry_file(lc_name, inode_num, inodes, disk) == -1) {
+            perror("This file name existed2.\n");
             exit(ENOENT);
         }
-        type_add = 0;
+        type_add = 0;//find correct directory /abc/a or /abc/a/ type0
     }
 
     // not exist
-    //if (inode_num == -1){
-    get_file_parent_path(record_path, &file_parent_path);
-    get_file_name(record_path, &file_name); //record file name
-    new_path = malloc(strlen(file_parent_path));
-    strcpy(new_path, file_parent_path); // record new path
+    if (inode_num == -1){
+        get_file_parent_path(record_path, &file_parent_path);
+        get_file_name(record_path, &file_name); //record file name
+        new_path = malloc(strlen(file_parent_path));
+        strcpy(new_path, file_parent_path); // record new path
 
-    inode_num_p = get_inode_num(new_path, inodes, disk);
-    if ((inode_num_p != -1) && (record_path[strlen(record_path) - 1] == '/')) {
-        fprintf(stderr, "Illegal target path for copy1\n");
-        return ENOENT;
-    }
+        inode_num_p = get_inode_num(new_path, inodes, disk);
+        if ((inode_num_p != -1) && (record_path[strlen(record_path) - 1] == '/')) {
+            fprintf(stderr, "Illegal target path for copy1\n");
+            return ENOENT;
+        }
+        
     // inode for parent path
-    inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
+        inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
         //check parent path
-    //printf("%d\n",inode_num_p);
-    if ((inode_num_p == -1) ||
+        //printf("%d\n",inode_num_p);
+        if ((inode_num_p == -1) ||
                             ((inode_num_p != -1) && (inode->i_mode & EXT2_S_IFREG))) {
-        fprintf(stderr, "Illegal target path for copy2\n");
-        return ENOENT;
+            fprintf(stderr, "Illegal target path for copy2\n");
+            return ENOENT;
+        }
     }
 
+<<<<<<< HEAD
 
 
+=======
+
+
+>>>>>>> refs/remotes/origin/master
         //else{ keyi
             //get a free new inode from inode bitmap
             int new_inode = -1;
