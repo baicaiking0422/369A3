@@ -46,8 +46,10 @@ int main(int argc, const char * argv[]) {
         exit(EEXIST);
     }
 
-    char parent_path[1024];
-    get_file_parent_path(path, (char **)parent_path);
+    char *parent_path;
+    char *file_name;
+    get_file_parent_path(path, &parent_path);
+    printf("%s\n", parent_path);
     inode_num = get_inode_num(parent_path, inodes, disk);
 
     if (inode_num == -1) {
@@ -55,7 +57,7 @@ int main(int argc, const char * argv[]) {
         exit(ENOENT);
     }
 
-    struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
+    struct ext2_inode *inode = (struct ext2_inode *) (inodes + sizeof(struct ext2_inode) * (inode_num - 1));
     if (inode -> i_size != 0) {
         int inode_block_num;
         int count;
@@ -67,32 +69,18 @@ int main(int argc, const char * argv[]) {
         for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
             count = 0;
             check = 0;
-            if (inode->i_block[inode_block_num] != 0) {
+            if (inode->i_block[inode_block_num] == 0) {
 
-                while (count < 1024) {
-                    entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode -> i_block[inode_block_num] + count);
-                    // if (entry == NULL) printf("NULL!!\n");
-                    count += entry->rec_len;
-                    check ++;
-                    name = malloc(sizeof(char) * entry->name_len);
-                    strncpy(name, entry->name, entry->name_len);
-
-                    if (argc == 4) {
-                        printf("%s", name);
-                        if (entry->rec_len != 1024) {
-                            printf("\n");
-                        }
-                    }
-
-                    else {
-                        if (check >= 3) {
-                            printf("%s", name);
-                            if (entry -> rec_len != 1024) {
-                                printf("\n");
-                            }
-                        }
-                    }
-                }
+                printf("%d\n", inode_block_num);
+                // while (count < 1024) {
+                entry = (struct ext2_dir_entry_2*) (disk + 1024 * inode -> i_block[inode_block_num] + count);
+                entry->inode = inode_block_num;
+                entry->rec_len = 1024;
+                entry->name_len = strlen(file_name);
+                entry->file_type |= EXT2_FT_DIR;
+                get_file_name(path, &file_name);
+                strcpy(file_name, entry->name);
+                break;
             }
         }
     }
