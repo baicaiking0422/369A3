@@ -29,6 +29,9 @@ int main(int argc, const char * argv[]){
     //local file size and required blocks
     int file_size = lseek(local_fd, 0, SEEK_END);
     int file_block_num = (file_size - 1) / EXT2_BLOCK_SIZE + 1;
+    printf("lcfile block num: %d\n", file_block_num);
+    printf("lcfile size: %d\n", file_size);
+    
     
     //record target path
     int path_len;
@@ -66,10 +69,11 @@ int main(int argc, const char * argv[]){
     
     
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
-    void *inodes = disk + 1024* gd->bg_inode_table;
+    void *inodes = disk + 1024 * gd->bg_inode_table;
     
     //get inode and block bitmap
     int *inode_bitmap = get_inode_bitmap(disk + 1024 * gd->bg_inode_bitmap);
+    
     int *block_bitmap = get_block_bitmap(disk + 1024 * gd->bg_block_bitmap);
     
     struct ext2_inode *inode;
@@ -87,19 +91,17 @@ int main(int argc, const char * argv[]){
     
     inode_num = get_inode_num(path, inodes, disk);
     //inode for full path
-    check_inode = (struct ext2_inode *)(disk +1024 * gd->bg_inode_table +
-                                        sizeof(struct ext2_inode) * (inode_num - 1));
+    check_inode = (struct ext2_inode *)(inodes + sizeof(struct ext2_inode) * (inode_num - 1));
     // inode is file and already exist
     if (inode_num != -1) {
         // /abc/a
-        printf("inode_num: %d\n", inode_num);
         if (check_inode->i_mode & EXT2_S_IFREG || check_inode->i_mode & EXT2_S_IFLNK ){
             perror("This file name existed.\n");
-            exit(ENOENT);
+            exit(EEXIST);
         }
         else if (check_entry_file(lc_name, check_inode, disk) == -1) {
             perror("This file name existed2.\n");
-            exit(ENOENT);
+            exit(EEXIST);
         }
         type_add = 0;//find correct directory /abc/a or /abc/a/ type0
     }
@@ -117,7 +119,7 @@ int main(int argc, const char * argv[]){
             return ENOENT;
         }
         // inode for parent path
-        inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
+        inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num_p - 1));
         //check parent path
         //printf("%d\n",inode_num_p);
         if (inode_num_p == -1)  {
@@ -126,19 +128,20 @@ int main(int argc, const char * argv[]){
         }
     }
     
-    //else{ keyi
+    
     //get a free new inode from inode bitmap
-    int new_inode = -1;
+    int new_inode_idx = -1;
     int i;
     for (i = 0; i < 32; i++) {
         if (inode_bitmap[i] == 0) {
-            new_inode = i;
+            new_inode_idx = i;
             break;
         }
     }
-    //printf("%d\n",new_inode);
+    printf("new inode:%d\n",new_inode_idx);
+    
     //check new node for copy file
-    if  (new_inode == -1){ // no free inode to assign
+    if  (new_inode_idx == -1){ // no free inode to assign
         fprintf(stderr, "No free inode\n");
         exit(1);
     }
@@ -150,7 +153,7 @@ int main(int argc, const char * argv[]){
         fprintf(stderr, "Not enough blocks in the disk\n");
         exit(1);
     }
-    
+    printf("new block:%d\n",*free_blocks);
     //copy local file
     unsigned char* local_file = mmap(NULL, file_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, local_fd, 0);
     if(local_file == MAP_FAILED) {
@@ -162,28 +165,27 @@ int main(int argc, const char * argv[]){
     int total_size = file_size;
     int record = 0;
     for (j = 0; j < file_block_num; j++){
-        set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, free_blocks[i], 1);
+        set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, free_blocks[j], 1);
         gd->bg_free_blocks_count --;
         if (total_size < EXT2_BLOCK_SIZE){
-            memcpy(disk + 1024 * (free_blocks[i] +1), local_file + record, total_size);
+            memcpy(disk + 1024 * (free_blocks[j] +1), local_file + record, total_size);
             break;
         }else{
-            memcpy(disk + 1024 * (free_blocks[i] +1), local_file + record, 1024);
+            memcpy(disk + 1024 * (free_blocks[j] +1), local_file + record, 1024);
             total_size -= EXT2_BLOCK_SIZE;
             record += EXT2_BLOCK_SIZE;
         }
     }
     //assign new node
-    struct ext2_inode *n_inode = inodes + sizeof(struct ext2_inode) * new_inode;
+    struct ext2_inode *n_inode = inodes + sizeof(struct ext2_inode) * new_inode_idx;
     //new_inode num = new_inode + 1
     n_inode->i_mode = EXT2_S_IFREG;
     n_inode->i_size = file_size;
     n_inode->i_links_count = 1;
     n_inode->i_blocks = file_block_num * 2;
-    for (j = 0; j < 12; j++){
-        n_inode->i_block[i] = free_blocks[i] + 1;
-    }
-    set_inode_bitmap(disk + 1024 * gd->bg_inode_bitmap, new_inode, 1);
+    n_inode->i_block[0] = free_blocks[j] + 1;
+    
+    set_inode_bitmap(disk + 1024 * gd->bg_inode_bitmap, new_inode_idx, 1);
     gd->bg_free_inodes_count --;
     
     
@@ -193,9 +195,11 @@ int main(int argc, const char * argv[]){
     int count;
     struct ext2_dir_entry_2 *n_entry;
     struct ext2_dir_entry_2 *chk_entry;
+    struct ext2_dir_entry_2 *past_entry;
     struct ext2_inode *dir_inode;
     char *final_name;
     
+    printf("type_add:%d\n", type_add);
     if (type_add == 0) {
         dir_inode = check_inode;
         final_name = lc_name;
@@ -204,21 +208,24 @@ int main(int argc, const char * argv[]){
         dir_inode = inode;
         final_name = file_name;
     }
+    printf("final_name: %s\n", final_name);
     
     int required_rec_len = ((7 + strlen(final_name)) / 4 + 1) * 4;
     //int enough_rec_len = 0;//enough
-    int dir_num_blocks = dir_inode->i_size / 1024;
+    int dir_num_blocks = (dir_inode->i_size - 1) / 1024 + 1;
     int empty_rec_len = 0;
-    
+    printf("dir_num_blocks: %d\n",dir_num_blocks);
     //not indirected
-    if ((dir_num_blocks < 12) && (dir_inode->i_size % 1024 != 0)) {
+    if (dir_num_blocks < 12){
+        printf("here!!!\n");
         count = 0;
-        if (dir_inode->i_block[dir_num_blocks] != 0) {
+        if (dir_inode->i_block[dir_num_blocks - 1] != 0) {
             while (count < 1024) {
-                chk_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks] + count);
+	        chk_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks-1] + count);
                 count += chk_entry->rec_len;
                 if (count == 1024) {
-                    int final_entry_rec_len = ((7 + chk_entry->name_len) / 4 + 1) * 4;
+		    past_entry = chk_entry;
+	            int final_entry_rec_len = ((7 + chk_entry->name_len) / 4 + 1) * 4;
                     empty_rec_len = chk_entry->rec_len - final_entry_rec_len;
                     break;
                 }
@@ -226,28 +233,33 @@ int main(int argc, const char * argv[]){
         }
     }
     //indirected?
-    
-    if ((empty_rec_len > 0) && (empty_rec_len >= required_rec_len)) {
-        n_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks] + (1024 - empty_rec_len));
-        n_entry->inode = new_inode + 1;
+     printf("empty_rec_len: %d\n", empty_rec_len);
+     printf("required_rec_len: %d\n", required_rec_len);
+     if ((empty_rec_len > 0) && (empty_rec_len >= required_rec_len)) {
+        past_entry->rec_len = ((7 + past_entry->name_len) / 4 + 1) * 4;
+        n_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks-1] + (1024 - empty_rec_len));
+        n_entry->inode = new_inode_idx + 1;
         n_entry->rec_len = empty_rec_len;
         n_entry->name_len = strlen(final_name);
         n_entry->file_type = EXT2_FT_REG_FILE;
+	strncpy(n_entry->name, final_name, (int) n_entry->name_len +1);
+	printf("n_entry->name: %s\n", n_entry->name);
     }
     
     if ((empty_rec_len = 0) || ((empty_rec_len > 0) && (empty_rec_len < required_rec_len))) {
         int *n_free_block = get_free_block(block_bitmap, 1);
         if (n_free_block == NULL){
-            fprintf(stderr, "No emplty block\n");
+            fprintf(stderr, "No empty block\n");
             exit(1);
         }
         dir_inode->i_block[dir_num_blocks + 1] = *n_free_block;
-        n_entry =(struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks]);
-        n_entry->inode = new_inode + 1;
+        n_entry =(struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks+1]);
+        n_entry->inode = new_inode_idx + 1;
         n_entry->rec_len = 1024;
         n_entry->name_len = strlen(final_name);
         n_entry->file_type = EXT2_FT_REG_FILE;
-        set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, dir_inode->i_block[dir_num_blocks], 1);
+	strncpy(n_entry->name, final_name, (int) n_entry->name_len +1);
+        set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, dir_inode->i_block[dir_num_blocks+1], 1);
         gd->bg_free_blocks_count --;
         dir_inode->i_size += 1024;
         dir_inode->i_blocks += 2;
