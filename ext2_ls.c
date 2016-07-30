@@ -20,7 +20,7 @@ int main(int argc, const char * argv[]) {
     }
 
     if (argc == 4 && (strcmp(argv[2], "-a") != 0)) {
-        fprintf(stderr, "Wrong command");
+        fprintf(stderr, "Wrong command\n");
         exit(1);
     }
 
@@ -53,7 +53,7 @@ int main(int argc, const char * argv[]) {
     }
 
     if (path[0] != '/') {
-        fprintf(stderr, "This is not an absolute path!");
+        fprintf(stderr, "This is not an absolute path!\n");
         exit(1);
     }
 
@@ -100,7 +100,7 @@ int main(int argc, const char * argv[]) {
                         check ++;
                         name = malloc(sizeof(char) * (entry->name_len));
                         strncpy(name, entry->name, entry->name_len);
-                        
+
 
                         if (argc == 4) {
                             printf("%s", name);

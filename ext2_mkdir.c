@@ -14,13 +14,13 @@ unsigned char *disk;
 
 int main(int argc, const char * argv[]) {
 
+    /* Check arg */
     if (argc != 3) {
         fprintf(stderr, "Usage: ext2_mkdir <image file name> <abs path>\n");
         exit(1);
     }
 
     int fd = open(argv[1], O_RDWR);
-    // int path_len;
     char *path;
 
     path = malloc(strlen(argv[2]));
@@ -31,13 +31,13 @@ int main(int argc, const char * argv[]) {
         exit(1);
     }
 
+    /* Map to memory */
     disk = mmap(NULL, 128 * 1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (disk == MAP_FAILED) {
         perror("mmap");
         exit(1);
     }
 
-    struct ext2_super_block *sb = (struct ext2_super_block *)(disk + 1024);
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
     void *inodes = disk + 1024 * gd->bg_inode_table;
     int inode_num = get_inode_num(path, inodes, disk);
@@ -50,9 +50,7 @@ int main(int argc, const char * argv[]) {
     char *parent_path;
     char *file_name;
     get_file_parent_path(path, &parent_path);
-    printf("%s\n", parent_path);
     inode_num = get_inode_num(parent_path, inodes, disk);
-    printf("INODE_NUM: %d", inode_num);
 
     if (inode_num == -1) {
         perror("The directory does not exist.");
@@ -74,7 +72,6 @@ int main(int argc, const char * argv[]) {
         }
         if (set) break;
     }
-    printf("\n");
 
     set = 0;
     for (i = 0; i < 16; i ++) {
@@ -89,54 +86,22 @@ int main(int argc, const char * argv[]) {
         }
         if (set) break;
     }
-    printf("\n");
 
-    // int count;
-    // char *name;
-    printf("i: %d\n", i);
     struct ext2_inode *inode;
-    // for (i = 0; i < sb->s_inodes_count; i ++) {
-    //     if (i < EXT2_GOOD_OLD_FIRST_INO && i != EXT2_ROOT_INO - 1) {
-    //         continue;
-    //     }
     inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + 128 * (i * 8 + j));
     inode->i_size = 1;
     inode->i_mode |= EXT2_S_IFDIR;
-    //     if (inode->i_mode & EXT2_S_IFREG) {
-    //         continue;
-    //     }
-    //
-    //     if (inode->i_size == 0) {
-    //         printf("%d\n", i);
-    //         break;
-    //     }
-    //
-    // }
-
-    // struct ext2_inode *inode = (struct ext2_inode *) (inodes + sizeof(struct ext2_inode) * (inode_num - 1));
 
     int inode_block_num;
-    // int count;
-    // char *name;
-    // int check;
     struct ext2_dir_entry_2 *entry;
     inode_block_num = 0;
 
-    // for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
-        // count = 0;
-        // check = 0;
-        // if (inode->i_block[inode_block_num] != 0) {
-        //     entry = (struct ext2_dir_entry_2*) (disk + 1024 * inode -> i_block[inode_block_num] + count);
-        //     count += entry->rec_len;
-        // }
-        // else
-        // if (inode->i_block[inode_block_num] == 0) {
     // Add .
     inode->i_block[0] = k * 8 + l;
-    entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[0]); // 0 instead of count;
+    entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[0]);
     entry->inode = i * 8 + j + 1;
     entry->rec_len = 12;
-    entry->name_len = 1;//strlen(file_name);
+    entry->name_len = 1;
     entry->file_type |= EXT2_FT_DIR;
     strcpy(entry->name, ".");
 
@@ -149,7 +114,35 @@ int main(int argc, const char * argv[]) {
     strcpy(entry->name, "..");
 
     // Add Entry in its parent node
+    struct ext2_inode *parent_inode;
+    parent_inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
 
+    int count, timeout;
+    count = 0;
+    timeout = 0;
+    while (count < 1024) {
+        entry = (struct ext2_dir_entry_2 *)(disk + 1024 * parent_inode->i_block[0] + count);
+
+        if (count + entry->rec_len >= 1024) {
+            // If it is the last one
+            entry->rec_len = ((7 + entry->name_len) / 4 + 1) * 4;
+            count += entry->rec_len;
+            break;
+        }
+        count += entry->rec_len;
+        timeout ++;
+        if (timeout > 10) {
+            printf("Timeout, break.\n");
+            break;
+        }
+    }
+
+    // Entry for the new directory
+    entry = (struct ext2_dir_entry_2 *)(disk + 1024 * parent_inode->i_block[0] + count);
+    entry->file_type |= EXT2_FT_DIR;
+    entry->rec_len = 1024 - count;
+    get_file_name(path, &file_name);
+    entry->name_len = strlen(file_name);
+    strncpy(entry->name, file_name, entry->name_len);
+    entry->inode = i * 8 + j + 1;
 }
-
-// entry_rec_len = ((7 + entry->name_len) / 4 + 1) * 4;
