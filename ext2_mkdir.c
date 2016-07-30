@@ -52,20 +52,21 @@ int main(int argc, const char * argv[]) {
     get_file_parent_path(path, &parent_path);
     printf("%s\n", parent_path);
     inode_num = get_inode_num(parent_path, inodes, disk);
+    printf("INODE_NUM: %d", inode_num);
 
     if (inode_num == -1) {
         perror("The directory does not exist.");
         exit(ENOENT);
     }
 
-    int i, j, tmp, set;
+    int i, j, k, l, tmp, set;
     set = 0;
-    for (i = 0; i < 16; i ++) {
-        tmp = disk[gd->bg_block_bitmap * 1024 + i];
-        for (j = 0; j < 8; j ++) {
+    for (k = 0; k < 16; k ++) {
+        tmp = disk[gd->bg_block_bitmap * 1024 + k];
+        for (l = 0; l < 8; l ++) {
             if (!(tmp & 1)) {
-                // printf("i: %d\tj: %d\n", i, j);
-                set_block_bitmap(&disk[gd->bg_block_bitmap * 1024 + i], j, 1);
+                // printf("k: %d\tj: %d\n", k, l);
+                set_block_bitmap(&disk[gd->bg_block_bitmap * 1024 + k], l, 1);
                 set = 1;
                 break;
             }
@@ -121,7 +122,7 @@ int main(int argc, const char * argv[]) {
     struct ext2_dir_entry_2 *entry;
     inode_block_num = 0;
 
-    for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
+    // for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
         // count = 0;
         // check = 0;
         // if (inode->i_block[inode_block_num] != 0) {
@@ -129,17 +130,26 @@ int main(int argc, const char * argv[]) {
         //     count += entry->rec_len;
         // }
         // else
-        if (inode->i_block[inode_block_num] == 0) {
-            entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[0] + 0); // 0 instead of count;
-            entry->inode = inode_block_num;
-            entry->rec_len = 1024;
-            entry->name_len = strlen(file_name);
-            entry->file_type |= EXT2_FT_DIR;
-            get_file_name(path, &file_name);
-            strcpy(file_name, entry->name);
-            break;
-        }
-    }
+        // if (inode->i_block[inode_block_num] == 0) {
+    // Add .
+    inode->i_block[0] = k * 8 + l;
+    entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[0]); // 0 instead of count;
+    entry->inode = i * 8 + j + 1;
+    entry->rec_len = 12;
+    entry->name_len = 1;//strlen(file_name);
+    entry->file_type |= EXT2_FT_DIR;
+    strcpy(entry->name, ".");
+
+    // Add ..
+    entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[0] + 12);
+    entry->inode = inode_num;
+    entry->rec_len = 1024 - 12;
+    entry->name_len = 2;
+    entry->file_type |= EXT2_FT_DIR;
+    strcpy(entry->name, "..");
+
+    // Add Entry in its parent node
+
 }
 
 // entry_rec_len = ((7 + entry->name_len) / 4 + 1) * 4;
