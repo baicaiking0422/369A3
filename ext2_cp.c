@@ -52,19 +52,19 @@ int main(int argc, const char * argv[]){
     strncpy(lc_name, argv[2], lc_len);
     lc_name[lc_len] = '\0';
     
-
+    
     if (path[0] != '/') {
         fprintf(stderr, "This is not an absolute path!");
         exit(1);
     }
-
+    
     disk = mmap(NULL, 128 * 1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(disk == MAP_FAILED) {
         perror("mmap");
         exit(1);
     }
-
-
+    
+    
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
     void *inodes = disk + 1024* gd->bg_inode_table;
     
@@ -74,7 +74,7 @@ int main(int argc, const char * argv[]){
     
     struct ext2_inode *inode;
     struct ext2_inode *check_inode;
-
+    
     // get inode number from absolute path
     //check if already dir
     // /a/c/ /a/c are different
@@ -88,7 +88,7 @@ int main(int argc, const char * argv[]){
     inode_num = get_inode_num(path, inodes, disk);
     //inode for full path
     check_inode = (struct ext2_inode *)(disk +1024 * gd->bg_inode_table +
-                                                          sizeof(struct ext2_inode) * (inode_num - 1));
+                                        sizeof(struct ext2_inode) * (inode_num - 1));
     // inode is file and already exist
     if (inode_num != -1) {
         // /abc/a
@@ -116,7 +116,7 @@ int main(int argc, const char * argv[]){
             fprintf(stderr, "Illegal target path for copy1\n");
             return ENOENT;
         }
-    // inode for parent path
+        // inode for parent path
         inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
         //check parent path
         //printf("%d\n",inode_num_p);
@@ -125,7 +125,7 @@ int main(int argc, const char * argv[]){
             return ENOENT;
         }
     }
-
+    
     //else{ keyi
     //get a free new inode from inode bitmap
     int new_inode = -1;
@@ -142,7 +142,7 @@ int main(int argc, const char * argv[]){
         fprintf(stderr, "No free inode\n");
         exit(1);
     }
-            
+    
     //get free blocks from block bitmap
     int *free_blocks = get_free_block(block_bitmap, file_block_num);
     //check free_blocks enough
@@ -228,11 +228,11 @@ int main(int argc, const char * argv[]){
     //indirected?
     
     if ((empty_rec_len > 0) && (empty_rec_len >= required_rec_len)) {
-            n_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks] + (1024 - empty_rec_len));
-            n_entry->inode = new_inode + 1;
-            n_entry->rec_len = empty_rec_len;
-            n_entry->name_len = strlen(final_name);
-            n_entry->file_type = EXT2_FT_REG_FILE;
+        n_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks] + (1024 - empty_rec_len));
+        n_entry->inode = new_inode + 1;
+        n_entry->rec_len = empty_rec_len;
+        n_entry->name_len = strlen(final_name);
+        n_entry->file_type = EXT2_FT_REG_FILE;
     }
     
     if ((empty_rec_len = 0) || ((empty_rec_len > 0) && (empty_rec_len < required_rec_len))) {
@@ -254,5 +254,5 @@ int main(int argc, const char * argv[]){
     }
     
     return 0;
-//main blanket
+    //main blanket
 }

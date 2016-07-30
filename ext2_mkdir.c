@@ -58,24 +58,59 @@ int main(int argc, const char * argv[]) {
         exit(ENOENT);
     }
 
-    int count, i;
-    char *name;
-    struct ext2_inode *inode;
-    for (i = 0; i < sb->s_inodes_count; i ++) {
-        if (i < EXT2_GOOD_OLD_FIRST_INO && i != EXT2_ROOT_INO - 1) {
-            continue;
+    int i, j, tmp, set;
+    set = 0;
+    for (i = 0; i < 16; i ++) {
+        tmp = disk[gd->bg_block_bitmap * 1024 + i];
+        for (j = 0; j < 8; j ++) {
+            if (!(tmp & 1)) {
+                // printf("i: %d\tj: %d\n", i, j);
+                set_block_bitmap(&disk[gd->bg_block_bitmap * 1024 + i], j, 1);
+                set = 1;
+                break;
+            }
+            tmp >>= 1;
         }
-        inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + 128 * i);
-        if (inode->i_mode & EXT2_S_IFREG) {
-            continue;
-        }
-
-        if (inode->i_size == 0) {
-            printf("%d\n", i);
-            break;
-        }
-
+        if (set) break;
     }
+    printf("\n");
+
+    set = 0;
+    for (i = 0; i < 16; i ++) {
+        tmp = disk[gd->bg_inode_bitmap * 1024 + i];
+        for (j = 0; j < 8; j ++) {
+            if (!(tmp & 1)) {
+                set_block_bitmap(&disk[gd->bg_inode_bitmap * 1024 + i], j, 1);
+                set = 1;
+                break;
+            }
+            tmp >>= 1;
+        }
+        if (set) break;
+    }
+    printf("\n");
+
+    // int count;
+    // char *name;
+    printf("i: %d\n", i);
+    struct ext2_inode *inode;
+    // for (i = 0; i < sb->s_inodes_count; i ++) {
+    //     if (i < EXT2_GOOD_OLD_FIRST_INO && i != EXT2_ROOT_INO - 1) {
+    //         continue;
+    //     }
+    inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + 128 * (i * 8 + j));
+    inode->i_size = 1;
+    inode->i_mode |= EXT2_S_IFDIR;
+    //     if (inode->i_mode & EXT2_S_IFREG) {
+    //         continue;
+    //     }
+    //
+    //     if (inode->i_size == 0) {
+    //         printf("%d\n", i);
+    //         break;
+    //     }
+    //
+    // }
 
     // struct ext2_inode *inode = (struct ext2_inode *) (inodes + sizeof(struct ext2_inode) * (inode_num - 1));
 
@@ -95,7 +130,7 @@ int main(int argc, const char * argv[]) {
         // }
         // else
         if (inode->i_block[inode_block_num] == 0) {
-            entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[0] + count); // 0 instead of count;
+            entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[0] + 0); // 0 instead of count;
             entry->inode = inode_block_num;
             entry->rec_len = 1024;
             entry->name_len = strlen(file_name);

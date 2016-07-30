@@ -61,7 +61,7 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
                         }
                     }
                 }
-                
+
             }
         }
         free(name);
@@ -115,7 +115,7 @@ void get_file_parent_path(char *file_path, char **file_parent_path){
 
         strncpy(*file_parent_path, file_path, i +1);
         (*file_parent_path)[i+1] = '\0';
-        
+
     }else{
         i--;
         while (i >= 0 && file_path[i] != '/') {
