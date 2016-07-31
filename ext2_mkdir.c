@@ -27,7 +27,7 @@ int main(int argc, const char * argv[]) {
     strcpy(path, argv[2]);
 
     if (path[0] != '/') {
-        fprintf(stderr, "This is not an absolute path!");
+        fprintf(stderr, "This is not an absolute path!\n");
         exit(1);
     }
 
@@ -43,7 +43,7 @@ int main(int argc, const char * argv[]) {
     int inode_num = get_inode_num(path, inodes, disk);
 
     if (inode_num != -1) {
-        perror("The directory already exists.");
+        perror("The directory already exists.\n");
         exit(EEXIST);
     }
 
@@ -53,7 +53,7 @@ int main(int argc, const char * argv[]) {
     inode_num = get_inode_num(parent_path, inodes, disk);
 
     if (inode_num == -1) {
-        perror("The directory does not exist.");
+        perror("The directory does not exist.\n");
         exit(ENOENT);
     }
 
@@ -65,6 +65,7 @@ int main(int argc, const char * argv[]) {
             if (!(tmp & 1)) {
                 // printf("k: %d\tj: %d\n", k, l);
                 set_block_bitmap(&disk[gd->bg_block_bitmap * 1024 + k], l, 1);
+                gd->bg_free_blocks_count ++;
                 set = 1;
                 break;
             }
@@ -78,7 +79,8 @@ int main(int argc, const char * argv[]) {
         tmp = disk[gd->bg_inode_bitmap * 1024 + i];
         for (j = 0; j < 8; j ++) {
             if (!(tmp & 1)) {
-                set_block_bitmap(&disk[gd->bg_inode_bitmap * 1024 + i], j, 1);
+                set_inode_bitmap(&disk[gd->bg_inode_bitmap * 1024 + i], j, 1);
+                gd->bg_free_inodes_count ++;
                 set = 1;
                 break;
             }
