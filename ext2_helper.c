@@ -60,24 +60,24 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
                             break;
                         }
                     }
-		}
+                }
             }
             if (inode->i_block[12] != 0){
-	        entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12]);
-		count = 4;
-		while (count < 1024 && (disk[1024 * inode->i_block[12] + count] != 0)){
-		    entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12] + count);
-		    count += 4;
-		    name = malloc(sizeof(char) * (entry->name_len+1));
-		    strncpy(name, entry->name, entry->name_len);
-		    name[entry->name_len] = '\0';
-		    if (strcmp(token, name) == 0){
-		        new_inode_num = entry->inode;
-			check_exist = 0;
-			break;
-		    }
-		}
-	    }
+	            entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12]);
+		        count = 4;
+		        while (count < 1024 && (disk[1024 * inode->i_block[12] + count] != 0)){
+		            entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12] + count);
+		            count += 4;
+		            name = malloc(sizeof(char) * (entry->name_len+1));
+		            strncpy(name, entry->name, entry->name_len);
+		            name[entry->name_len] = '\0';
+                    if (strcmp(token, name) == 0){
+                        new_inode_num = entry->inode;
+                        check_exist = 0;
+                        break;
+		            }
+                }
+            }
         }
         free(name);
         // check whether this token exists in entries of this inode
