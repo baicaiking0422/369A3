@@ -55,11 +55,12 @@ int main(int argc, const char * argv[]) {
     struct ext2_inode *inode = (struct ext2_inode *)(disk + 1024 * gd->bg_inode_table + sizeof(struct ext2_inode) * (inode_num - 1));
     struct ext2_dir_entry_2 *entry;
     struct ext2_dir_entry_2 *next_entry;
-    int count, timeout, offset;
+    int count, timeout, offset, found;
     char *name;
     count = 0;
     timeout = 0;
     offset = 0;
+    found = 0;
 
     while (count < 1024) {
 
@@ -74,6 +75,8 @@ int main(int argc, const char * argv[]) {
         // If found
         if (strcmp(file_name, name) == 0) {
 
+            found = 1;
+
             // If not a regular file
             if (next_entry->file_type & EXT2_S_IFREG) {
                 perror("This is not a regular file.\n");
@@ -81,9 +84,7 @@ int main(int argc, const char * argv[]) {
             }
 
             // If is a regular file
-            printf("%d\n", entry->rec_len);
             entry->rec_len += next_entry->rec_len;
-            printf("%d\n", entry->rec_len);
             next_entry->rec_len = 0;
             next_entry->name_len = 0;
             strcpy(next_entry->name, "");
@@ -92,15 +93,17 @@ int main(int argc, const char * argv[]) {
         }
 
         free(name);
+
         timeout ++;
         if (timeout > 10) {
-            printf("Timeout, break.\n");
             break;
         }
     }
 
     /* If the file does not exist. */
-    perror("The file does not exist.\n");
-    exit(ENOENT);
+    if (!found) {
+        perror("The file does not exist.\n");
+        exit(ENOENT);
+    }
 
 }
