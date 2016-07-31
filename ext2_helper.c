@@ -60,9 +60,24 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
                             break;
                         }
                     }
-                }
-
+		}
             }
+            if (inode->i_block[12] != 0){
+	        entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12]);
+		count = 4;
+		while (count < 1024 && (disk[1024 * inode->i_block[12] + count] != 0)){
+		    entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12] + count);
+		    count += 4;
+		    name = malloc(sizeof(char) * (entry->name_len+1));
+		    strncpy(name, entry->name, entry->name_len);
+		    name[entry->name_len] = '\0';
+		    if (strcmp(token, name) == 0){
+		        new_inode_num = entry->inode;
+			check_exist = 0;
+			break;
+		    }
+		}
+	    }
         }
         free(name);
         // check whether this token exists in entries of this inode
@@ -152,7 +167,7 @@ int *get_free_block(int *block_bitmap, int needed_num_blocks){
     int i, j;
     j = 0;
     int *new_blocks = malloc(sizeof(int) * needed_num_blocks);
-    for (i = 0; i < needed_num_blocks; i++) {
+    for (i = 0; i < needed_num_blocks; i ++) {
         while (block_bitmap[j] != 0) {
             j++;
             if (j == 128) {
@@ -160,6 +175,7 @@ int *get_free_block(int *block_bitmap, int needed_num_blocks){
             }
         }
         new_blocks[i] = j;
+        j++;
     }
     return new_blocks;
 }
@@ -202,6 +218,8 @@ int check_entry_file(char *lc_file, struct ext2_inode *check_inode, unsigned cha
                 }
             }
         }
+        
+
         return 0;
     }
     return 1;
