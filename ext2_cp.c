@@ -31,8 +31,8 @@ int main(int argc, const char * argv[]){
     int file_block_num = (file_size - 1) / EXT2_BLOCK_SIZE + 1;
     int indirection = 0; // 0: no indirection, 1: indirection
     if (file_block_num > 12){
-      indirection = 1;
-      file_block_num++;
+        indirection = 1;
+        file_block_num++;
     }
     
     //record target path
@@ -149,13 +149,13 @@ int main(int argc, const char * argv[]){
     
     //get free blocks from block bitmap
     int *free_blocks = get_free_block(block_bitmap, file_block_num);
-      
+    
     //check free_blocks enough
     if (free_blocks == NULL){
         fprintf(stderr, "Not enough blocks in the disk\n");
         exit(1);
     }
-
+    
     //copy local file
     unsigned char* local_file = mmap(NULL, file_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, local_fd, 0);
     if(local_file == MAP_FAILED) {
@@ -178,7 +178,7 @@ int main(int argc, const char * argv[]){
             gd->bg_free_blocks_count --;
             if (total_size < EXT2_BLOCK_SIZE){
                 memcpy(disk + 1024 * (free_blocks[j] +1), local_file + record, total_size);
-	        total_size = 0;
+                total_size = 0;
                 break;
             }else{
                 memcpy(disk + 1024 * (free_blocks[j] +1), local_file + record, 1024);
@@ -187,16 +187,16 @@ int main(int argc, const char * argv[]){
             }
         }
         
-      // set the last potion to be the master idx to store blocks
-      set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, free_blocks[12], 1);
-      gd->bg_free_blocks_count --;
-      
-       for (j = 13; j < file_block_num; j++){
+        // set the last potion to be the master idx to store blocks
+        set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, free_blocks[12], 1);
+        gd->bg_free_blocks_count --;
+        
+        for (j = 13; j < file_block_num; j++){
             set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, free_blocks[j], 1);
             gd->bg_free_blocks_count --;
             if (total_size < EXT2_BLOCK_SIZE){
                 memcpy(disk + 1024 * (free_blocks[j] +1), local_file + record, total_size);
-	        total_size = 0;
+                total_size = 0;
                 break;
             }else{
                 memcpy(disk + 1024 * (free_blocks[j] +1), local_file + record, 1024);
@@ -205,16 +205,16 @@ int main(int argc, const char * argv[]){
             }
         }
         
-      disk[1024 * (free_blocks[12] + 1)] = free_blocks[12] + 1;
-      int idx = 4;
-      while (idx < 1024) {
-	for (k = 13; k < file_block_num; k++){
-	    disk[1024 * (free_blocks[12] + 1) + idx] = free_blocks[k] + 1;
-	    idx += 4;
-	}
-	disk[1024 * (free_blocks[12] + 1) + idx] = 0;
-	idx += 4;
-      }
+        disk[1024 * (free_blocks[12] + 1)] = free_blocks[12] + 1;
+        int idx = 4;
+        while (idx < 1024) {
+            for (k = 13; k < file_block_num; k++){
+                disk[1024 * (free_blocks[12] + 1) + idx] = free_blocks[k] + 1;
+                idx += 4;
+            }
+            disk[1024 * (free_blocks[12] + 1) + idx] = 0;
+            idx += 4;
+        }
     }
     
     // not indirection
@@ -225,13 +225,13 @@ int main(int argc, const char * argv[]){
             gd->bg_free_blocks_count --;
             if (total_size < EXT2_BLOCK_SIZE){
                 memcpy(disk + 1024 * (free_blocks[j] +1), local_file + record, total_size);
-	        total_size = 0;
+                total_size = 0;
                 break;
             }else{
                 memcpy(disk + 1024 * (free_blocks[j] +1), local_file + record, 1024);
                 total_size -= EXT2_BLOCK_SIZE;
                 record += EXT2_BLOCK_SIZE;
-           }
+            }
         }
     }
     
@@ -245,8 +245,8 @@ int main(int argc, const char * argv[]){
     int z;
     for (z = 0; z < file_block_num; z++){
         if (z > 11){
-	    break;
-	}
+            break;
+        }
         n_inode->i_block[z] = free_blocks[z] + 1;
     }
     
@@ -285,26 +285,26 @@ int main(int argc, const char * argv[]){
     count = 0;
     if (dir_inode->i_block[dir_num_blocks - 1] != 0) {
         while (count < 1024) {
-	    chk_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks-1] + count);
+            chk_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks-1] + count);
             count += chk_entry->rec_len;
             if (count == 1024) {
                 past_entry = chk_entry;
                 int final_entry_rec_len = ((7 + chk_entry->name_len) / 4 + 1) * 4;
-	        empty_rec_len = chk_entry->rec_len - final_entry_rec_len;
+                empty_rec_len = chk_entry->rec_len - final_entry_rec_len;
                 break;
             }
         }
     }
     
     //indirected?
-     if ((empty_rec_len > 0) && (empty_rec_len >= required_rec_len)) {
+    if ((empty_rec_len > 0) && (empty_rec_len >= required_rec_len)) {
         past_entry->rec_len = ((7 + past_entry->name_len) / 4 + 1) * 4;
         n_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks-1] + (1024 - empty_rec_len));
         n_entry->inode = new_inode_idx + 1;
         n_entry->rec_len = empty_rec_len;
         n_entry->name_len = strlen(final_name);
         n_entry->file_type = EXT2_FT_REG_FILE;
-	strncpy(n_entry->name, final_name, (int) n_entry->name_len +1);
+        strncpy(n_entry->name, final_name, (int) n_entry->name_len +1);
     }
     // not enough empty_rec_len for this entry, need to open a new block
     if ((empty_rec_len = 0) || ((empty_rec_len > 0) && (empty_rec_len < required_rec_len))) {
@@ -319,7 +319,7 @@ int main(int argc, const char * argv[]){
         n_entry->rec_len = 1024;
         n_entry->name_len = strlen(final_name);
         n_entry->file_type = EXT2_FT_REG_FILE;
-	strncpy(n_entry->name, final_name, (int) n_entry->name_len +1);
+        strncpy(n_entry->name, final_name, (int) n_entry->name_len +1);
         set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, dir_inode->i_block[dir_num_blocks+1], 1);
         gd->bg_free_blocks_count --;
         dir_inode->i_size += 1024;
@@ -329,3 +329,4 @@ int main(int argc, const char * argv[]){
     return 0;
     //main blanket
 }
+
