@@ -109,47 +109,43 @@ int main(int argc, const char * argv[]) {
     offset = 0;
 
     while (count < 1024) {
+
         entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[0] + count);
+
+        // if first equal ...
+
+
+        // if last equal ...
 
         count += entry->rec_len;
 
         next_entry = (struct ext2_dir_entry_2 *)(disk + 1024 * inode->i_block[0] + count);
 
-        name = malloc(sizeof(char) * entry->name_len + 1);
-        strncpy(name, entry->name, entry->name_len);
-        name[entry->name_len] = '\0';
+        name = malloc(sizeof(char) * next_entry->name_len + 1);
+        strncpy(name, next_entry->name, next_entry->name_len);
+        name[next_entry->name_len] = '\0';
 
         printf(
             "Inode: %d rec_len: %d name_len: %d name=%s\n",
-            entry->inode,
-            entry->rec_len,
-            entry->name_len,
+            next_entry->inode,
+            next_entry->rec_len,
+            next_entry->name_len,
             name);
 
         // If found
         if (strcmp(file_name, name) == 0) {
 
-
             // If not a regular file
-            if (entry->file_type & EXT2_S_IFREG) {
+            if (next_entry->file_type & EXT2_S_IFREG) {
                 perror("This is not a regular file.\n");
                 exit(ENOENT);
             }
-            
-            if (count == 0) {
-                // If first one
-                // ...
-            }
 
-            offset = entry->rec_len;
-            printf("%d\n", count);
+            entry->rec_len += next_entry->rec_len;
+            next_entry->rec_len = 0;
+            next_entry->name_len = 0;
+            next_entry->inode = 0;
 
-
-            // entry->file_type
-            // entry->rec_len = 0;
-            // entry->name_len
-            // entry->name
-            // entry->inode
         }
 
         free(name);
