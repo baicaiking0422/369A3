@@ -305,6 +305,7 @@ int main(int argc, const char * argv[]){
         n_entry->name_len = strlen(final_name);
         n_entry->file_type = EXT2_FT_REG_FILE;
         strncpy(n_entry->name, final_name, (int) n_entry->name_len +1);
+        n_entry->name[(int) n_entry->name_len +1] = '\0';
     }
     // not enough empty_rec_len for this entry, need to open a new block
     if ((empty_rec_len = 0) || ((empty_rec_len > 0) && (empty_rec_len < required_rec_len))) {
@@ -320,6 +321,7 @@ int main(int argc, const char * argv[]){
         n_entry->name_len = strlen(final_name);
         n_entry->file_type = EXT2_FT_REG_FILE;
         strncpy(n_entry->name, final_name, (int) n_entry->name_len +1);
+        n_entry->name[(int) n_entry->name_len +1] = '\0';
         set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, dir_inode->i_block[dir_num_blocks+1], 1);
         gd->bg_free_blocks_count --;
         dir_inode->i_size += 1024;
