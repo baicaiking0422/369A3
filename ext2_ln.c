@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
 
   int desf_inodeidx = -1;
   struct ext2_inode des_inode = inodes + des_inodeidx * sizeof(struct ext2_inode);
-  des_num_blocks = des_inode->i_size / EXT2_BLOCK_SIZE;
+  int des_num_blocks = des_inode->i_size / EXT2_BLOCK_SIZE;
   for (i = 0; i < des_num_blocks; i++) {
     block_pos = des_inode->i_block[i];
     dir = (void*)dir + EXT2_BLOCK_SIZE * block_pos;
@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
 
 
   int exist = 1;
-  int req_size = ((des_nlength - 1) / 4 + 1 ) * 4 + 8;
+  int req_size = ((des_nlength - 1)/4+1)*4+8;
   for (i = 0; i < des_num_blocks; i++) {
     block_pos = des_inode->i_block[i];
     dir = (void*)disk + block_pos * EXT2_BLOCK_SIZE;
@@ -166,19 +166,51 @@ int main(int argc, char **argv) {
     while (size < EXT2_BLOCK_SIZE) {
       size += dir->rec_len;
       if (size == EXT2_BLOCK_SIZE){
-        if ((dir->rec_len) >= req_size + 8 + ((dir->name_len - 1) / 4 + 1) * 4 + 8) {
+        if ((dir->rec_len) >= req_size + 8 + ((dir->name_len - 1)/4+1)*4) {
           exist = 0;
           break;
         }
-        dir = (void*)dir + dir->rec_len;
       }
+      dir = (void*)dir + dir->rec_len;
+    }
       if (exist == 0) {
         break;
       }
     }
     if (found == 1) { // not found in this case
       block_bitmap = get_block_bitmap(block_bitmaploc);
-      int* free_block
+      int* free_block = get_free_block(block_bitmap, 1);
+      if (free_block == NULL) {
+        errno = ENOSPC;
+        perror("not enough free block\n");
+        exit(errno);
+      }
+      int idx_temp = *free_block;
+      dir = (void*)disk + EXT2+BLOCK_SIZE * (idx_temp + 1);
+      dir->inode = srcf_inodeidx + 1;
+      dir->file_type = EXT2_FT_REG_FILE;
+      dir->name_len = des_nlength;
+      dir->rec_len = EXT2_BLOCK_SIZE;
+      strncpy((void*)dir + 8, des_n, des_nlength);
+      set_block_bitmap(block_bitmaploc, idx_temp, 1);
+      des_inode->i_size += EXT2_BLOCK_SIZE;
+      des_inode->i_blocks += 2;
+      des_inode->i_block[des_num_blocks] = idx_temp + 1;
+    } else {
+      int prev = dir->rec_len;
+      int cls = ((dir->name_len -1)/4+1)*4+8;
+      dir->rec_len = cls;
+      dir = (void*)dir + cls;
+      dir->file_type = EXT2_FT_REG_FILE;
+      dir->rec_len = prev - cls;
+      dir->name_len = des_nlength;
+      dir->inode = srcf_inodeidx + 1;
+      strncpy((void*)dir + 8, des_n, des_nlength);
     }
-  }
+
+    // dont forget to update the count of links
+    struct ext2_inode* inode = inodes + sizeof(struct ext2_inode) * srcf_inodeidx;
+    inode->i_links_count++;
+
+    return 0;
 }
