@@ -2,9 +2,6 @@
 //  ext2_helper.c
 //
 //
-//  Created by Zhujun Wang on 2016-07-27.
-//
-//
 
 #include "ext2_helper.h"
 #include <stdio.h>
@@ -18,7 +15,9 @@
 #include <errno.h>
 #include "ext2.h"
 
-
+/*
+ * Get an inode index with path from disk
+ */
 int get_inode_num(char *path, void *inodes, unsigned char *disk){
     int cur_inode_num = EXT2_ROOT_INO;
     int new_inode_num;
@@ -62,6 +61,7 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
                     }
                 }
             }
+            // indirection
             if (inode->i_block[12] != 0){
 	            entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12]);
 		        count = 4;
@@ -94,6 +94,10 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
     }
 }
 
+/*
+ * Seperate original path to a parent directory path
+ */
+
  void get_file_name(char *file_path, char **file_name) {
 
     int i;
@@ -116,6 +120,9 @@ int get_inode_num(char *path, void *inodes, unsigned char *disk){
 
 }
 
+/*
+ * Seperate original path to a file path
+ */
 
 void get_file_parent_path(char *file_path, char **file_parent_path){
 
@@ -143,6 +150,10 @@ void get_file_parent_path(char *file_path, char **file_parent_path){
 
  }   //return file_parent_path;
 
+/*
+ * Get an inode bitmap from disk
+ */
+
 int *get_inode_bitmap(void *inode_info){
     int *inode_bitmap = malloc(sizeof(int) * 32);
     int i;
@@ -153,6 +164,10 @@ int *get_inode_bitmap(void *inode_info){
     return inode_bitmap;
 }
 
+/*
+ * Get a block bitmap from disk
+ */
+
 int *get_block_bitmap(void *block_info){
     int *block_bitmap = malloc(sizeof(int) * 128);
     int i;
@@ -162,6 +177,10 @@ int *get_block_bitmap(void *block_info){
     }
     return block_bitmap;
 }
+
+/*
+ * Get an array of free block index with block bitmap
+ */
 
 int *get_free_block(int *block_bitmap, int needed_num_blocks){
     int i, j;
@@ -180,6 +199,10 @@ int *get_free_block(int *block_bitmap, int needed_num_blocks){
     return new_blocks;
 }
 
+/*
+ * Set bit to 0 or 1 on inode bitmap
+ */
+
 void set_inode_bitmap(void *inode_info, int inode_num, int bit){
     int byte = inode_num / 8;
     int i_bit = inode_num % 8;
@@ -187,7 +210,9 @@ void set_inode_bitmap(void *inode_info, int inode_num, int bit){
     *change = (*change & ~(1 << i_bit)) | (bit << i_bit);
 }
 
-
+/*
+ * Set bit to 0 or 1 on block bitmap
+ */
 void set_block_bitmap(void *block_info, int block_num, int bit){
     int byte = block_num / 8;
     int b_bit = block_num % 8;
@@ -195,6 +220,9 @@ void set_block_bitmap(void *block_info, int block_num, int bit){
     *change = (*change & ~(1 << b_bit)) | (bit << b_bit);
 }
 
+/*
+ * Check where inode has already get the local file entry
+ */
 int check_entry_file(char *lc_file, struct ext2_inode *check_inode, unsigned char *disk){
     int i, count;
     char *name;
@@ -218,7 +246,6 @@ int check_entry_file(char *lc_file, struct ext2_inode *check_inode, unsigned cha
                 }
             }
         }
-        
 
         return 0;
     }
