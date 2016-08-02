@@ -13,17 +13,20 @@
 unsigned char *disk;
 
 int main(int argc, const char * argv[]) {
-
+    
+    /* check correct path*/
     if((argc != 3) && (argc != 4)) {
         fprintf(stderr, "Usage: readimg <image file name> <abs path>\n");
         exit(1);
     }
-
+    
+    /* list all */
     if (argc == 4 && (strcmp(argv[2], "-a") != 0)) {
         fprintf(stderr, "Wrong command\n");
         exit(1);
     }
-
+    
+    /* Read and record path*/
     int fd = open(argv[1], O_RDWR);
     int path_len;
     char *path;
@@ -66,7 +69,8 @@ int main(int argc, const char * argv[]) {
 
     struct ext2_group_desc * gd = (struct ext2_group_desc *)(disk + 2048);
     void *inodes = disk + 1024 * gd->bg_inode_table;
-
+    
+    /* Test full pat*/
     int inode_num = get_inode_num(path, inodes, disk);
     if (inode_num == -1) {
         fprintf(stderr, "The directory or file does not exist.\n");
@@ -89,37 +93,50 @@ int main(int argc, const char * argv[]) {
         int check;
         struct ext2_dir_entry_2 *entry;
 
-            for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
-                count = 0;
-                check = 0;
-                if (inode->i_block[inode_block_num] != 0) {
+        for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
+            count = 0;
+            check = 0;
+            if (inode->i_block[inode_block_num] != 0) {
 
-                    while (count < 1024) {
-                        entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode -> i_block[inode_block_num] + count);
-                        count += entry->rec_len;
-                        check ++;
-                        name = malloc(sizeof(char) * (entry->name_len));
-                        strncpy(name, entry->name, entry->name_len);
-
-
-                        if (argc == 4) {
-                            printf("%s", name);
-                            if (entry->rec_len != 1024) {
-                                printf("\n");
-                            }
+                while (count < 1024) {
+                    entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode -> i_block[inode_block_num] + count);
+                    count += entry->rec_len;
+                    check ++;
+                    name = malloc(sizeof(char) * (entry->name_len+1));
+                    strncpy(name, entry->name, entry->name_len);
+                    name[entry->name_len] = '\0';
+                    if (argc == 4) {
+                        printf("%s", name);
+                        if (entry->rec_len != 1024) {
+                            printf("\n");
                         }
+                    }
 
-                        else {
-                            if (check >= 3) {
-                                printf("%s", name);
-                                if (entry -> rec_len != 1024) {
-                                    printf("\n");
-                                }
+                    else {
+                        if (check >= 3) {
+                            printf("%s", name);
+                            if (entry -> rec_len != 1024) {
+                                printf("\n");
                             }
                         }
                     }
                 }
             }
+        }
+        
+        // indirection
+        if (inode->i_block[12] != 0){
+            entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12]);
+            count = 4;
+            while (count < 1024 && (disk[1024 * inode->i_block[12] + count != 0])) {
+                entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12] + count);
+                count += 4;
+                name = malloc(sizeof(char) * (entry->name_len + 1));
+                strncpy(name, entry->name, entry->name_len);
+                name[entry->name_len] = '\0';
+                printf("%s\n",name);
+            }
+        }
     }
     return 0;
 }

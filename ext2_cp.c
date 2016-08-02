@@ -296,7 +296,7 @@ int main(int argc, const char * argv[]){
         }
     }
     
-    //indirected?
+    //not indirected
     if ((empty_rec_len > 0) && (empty_rec_len >= required_rec_len)) {
         past_entry->rec_len = ((7 + past_entry->name_len) / 4 + 1) * 4;
         n_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks-1] + (1024 - empty_rec_len));
@@ -329,6 +329,5 @@ int main(int argc, const char * argv[]){
     }
     
     return 0;
-    //main blanket
 }
 
