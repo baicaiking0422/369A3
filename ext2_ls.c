@@ -85,14 +85,14 @@ int main(int argc, const char * argv[]) {
         printf("%s\n", file_name);
         return 0;
     }
-
+    
     if (inode -> i_size != 0) {
         int inode_block_num;
         int count;
         char *name;
         int check;
         struct ext2_dir_entry_2 *entry;
-
+        /* print all entry name*/
         for (inode_block_num = 0; inode_block_num < 12; inode_block_num ++) {
             count = 0;
             check = 0;
@@ -105,6 +105,7 @@ int main(int argc, const char * argv[]) {
                     name = malloc(sizeof(char) * (entry->name_len+1));
                     strncpy(name, entry->name, entry->name_len);
                     name[entry->name_len] = '\0';
+                    /* if -a, need to printf . & ..*/
                     if (argc == 4) {
                         printf("%s", name);
                         if (entry->rec_len != 1024) {
@@ -124,7 +125,7 @@ int main(int argc, const char * argv[]) {
             }
         }
         
-        // indirection
+        /* indirection part */
         if (inode->i_block[12] != 0){
             entry = (struct ext2_dir_entry_2*)(disk + 1024 * inode->i_block[12]);
             count = 4;
