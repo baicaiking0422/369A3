@@ -57,7 +57,7 @@ int main(int argc, const char * argv[]){
     strncpy(lc_name, argv[2], lc_len);
     lc_name[lc_len] = '\0';
     
-    
+    // check absolute path
     if (path[0] != '/') {
         fprintf(stderr, "This is not an absolute path!");
         exit(1);
@@ -187,7 +187,7 @@ int main(int argc, const char * argv[]){
             }
         }
         
-        // set the last potion to be the master idx to store blocks
+        // set the last position to be the master idx to store blocks
         set_block_bitmap(disk + 1024 * gd->bg_block_bitmap, free_blocks[12], 1);
         gd->bg_free_blocks_count --;
         
@@ -297,6 +297,7 @@ int main(int argc, const char * argv[]){
     }
     
     //not indirected
+    // enough empty rec_len for new entry name
     if ((empty_rec_len > 0) && (empty_rec_len >= required_rec_len)) {
         past_entry->rec_len = ((7 + past_entry->name_len) / 4 + 1) * 4;
         n_entry = (struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks-1] + (1024 - empty_rec_len));
@@ -314,6 +315,7 @@ int main(int argc, const char * argv[]){
             fprintf(stderr, "No empty block\n");
             exit(1);
         }
+        //get a new block and then set new entry
         dir_inode->i_block[dir_num_blocks + 1] = *n_free_block;
         n_entry =(struct ext2_dir_entry_2*)(disk + 1024 * dir_inode->i_block[dir_num_blocks+1]);
         n_entry->inode = new_inode_idx + 1;
