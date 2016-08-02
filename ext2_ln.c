@@ -4,8 +4,8 @@
 //
 //  Created by Yue Li on 2016-07-28.
 //
-// I am stucked in US and cannot collaborate with you guys very well as you know
-// pls forgive me = =
+// 
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -18,7 +18,9 @@
 #include "ext2.h"
 #include "ext2_helper.h"
 
-unsigned char *disk;
+
+// helper functions, better write in ext2_helper but there is a warning when compile it, might relate to C99
+// if have time find a way to put it back to helper
 
 int find_dirn(char* list, char* buf) {
   int i, j;
@@ -46,7 +48,7 @@ int find_dir_inode(char* query, void* inodes) {
   int n_inode = EXT2_ROOT_INO;
   int n_block;
 
-  char buf[512] = "undefined";
+  char buf[512];
 
   while (1) {
     inode = (struct ext2_inode*)
@@ -132,7 +134,8 @@ int main(int argc, char **argv) {
   int fd = open(argv[1], O_RDWR);
   // int src_len = strlen(src);
   // int des_len = strlen(des);
-
+  char* src;
+  char* des;
   // if (argc == 4) {
   //   char* src = argv[2];
   //   char* des = argv[3];
@@ -140,6 +143,7 @@ int main(int argc, char **argv) {
   //   char* src = argv[3];
   //   char* des = argv[4];
   // }
+  unsigned char *disk;
   char* src = argv[2];
   char* des = argv[3]; // how to put these in an if statement???
 
