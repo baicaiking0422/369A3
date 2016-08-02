@@ -8,19 +8,115 @@
 // pls forgive me = =
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <string.h>
-#include <linux/limits.h>
+#include <errno.h>
 #include "ext2.h"
 #include "ext2_helper.h"
 
 unsigned char *disk;
 
+int find_dirn(char* list, char* buf) {
+  int i, j;
 
+  if (list[0] != '/') {
+    return -1;
+  }
+
+  for (i = 1, j = 0; list[i] != '/'; i++, j++) {
+    if (list[i] == '\0') {
+      break;
+    }
+    buf[j] = list[i];
+  }
+  buf[j] = '\0';
+
+  return i;
+}
+
+int find_dir_inode(char* query, void* inodes) {
+
+  struct ext2_inode* inode;
+  struct ext2_dir_entry_2* dir;
+
+  int n_inode = EXT2_ROOT_INO;
+  int n_block;
+
+  char buf[512] = "undefined";
+
+  while (1) {
+    inode = (struct ext2_inode*)
+      (inodes + (n_inode - 1) * sizeof(struct ext2_inode));
+    int total_size = inode->i_size;
+
+    if (strcmp(query, "/") == 0) {
+      return n_inode - 1;
+    }
+
+    if (strcmp(query, "") == 0) {
+      query[0] = '/';
+      query[1] = '\0';
+    }
+
+
+    int n = find_dirn(query, buf);
+    query += n;
+
+    int new_n_inode = -1;
+    int n_blockidx = 0;
+
+    int size = 0;
+
+    n_block = inode->i_block[n_blockidx];
+    dir = (struct ext2_dir_entry_2*)(disk + EXT2_BLOCK_SIZE * n_block);
+    while (size < total_size) {
+      size += dir->rec_len;
+      if (dir->file_type == EXT2_FT_DIR) {
+        if (strlen(buf) == dir->name_len &&
+            strncmp(buf, dir->name, dir->name_len) == 0) {
+          new_n_inode = dir->inode;
+          break;
+        }
+      }
+      dir = (void*)dir + dir->rec_len;
+      if (size % EXT2_BLOCK_SIZE == 0) { // need to use next pointer
+        n_blockidx++;
+        n_block = inode->i_block[n_blockidx];
+        dir = (struct ext2_dir_entry_2*)(disk + EXT2_BLOCK_SIZE * n_block);
+      }
+    }
+
+    if (new_n_inode == -1) {
+      return -1;
+    } else {
+      n_inode = new_n_inode;
+    }
+
+  }
+}
+
+/*
+detach a file
+*/
+void file_detach(char* path, char* name) {
+
+  int length = strlen(path);
+  int counter = length - 1;
+  while (path[counter] != '/') {
+    counter--;
+  }
+  int len_n = length - 1 - counter;
+  strncpy(name, path + length - len_n, len_n + 1);
+  if (counter != 0) {
+    path[counter] = '\0';
+  } else {
+    path[counter + 1] = '\0';
+  }
+}
 
 int main(int argc, char **argv) {
 
@@ -37,13 +133,16 @@ int main(int argc, char **argv) {
   // int src_len = strlen(src);
   // int des_len = strlen(des);
 
-  if (argc == 4) {
-    char* src = argv[2];
-    char* des = argv[3];
-  } else if (argc = 5) {
-    char* src = argv[3];
-    char* des = argv[4];
-  }
+  // if (argc == 4) {
+  //   char* src = argv[2];
+  //   char* des = argv[3];
+  // if (argc == 5) {
+  //   char* src = argv[3];
+  //   char* des = argv[4];
+  // }
+  char* src = argv[2];
+  char* des = argv[3]; // how to put these in an if statement???
+
 // error checking => absolute path TODO: Is the check necessary?
   if (src[0] != '/' || des[0] != '/') {
     fprintf(stderr, "not absolute path\n");
@@ -66,8 +165,8 @@ int main(int argc, char **argv) {
   char des_n[1024];
   int src_nlength;
   int des_nlength;
-  get_file_name(src, src_n);
-  get_file_name(des, des_n);
+  file_detach(src, src_n);
+  file_detach(des, des_n);
   src_nlength = strlen(src_n);
   des_nlength = strlen(des_n);
 
@@ -86,6 +185,7 @@ int main(int argc, char **argv) {
   // find src dir, des dir
   int src_inodeidx = find_dir_inode(src, inodes); //TODO: find_dir_inode
   int des_inodeidx = find_dir_inode(des, inodes); //TODO: find_dir_inode
+
   if (src_inodeidx < 0 || des_inodeidx < 0) {
     errno = ENOENT;
     if (src_inodeidx < 0) {
@@ -97,8 +197,13 @@ int main(int argc, char **argv) {
   }
 
   int desf_inodeidx = -1;
-  struct ext2_inode des_inode = inodes + des_inodeidx * sizeof(struct ext2_inode);
+  struct ext2_inode* des_inode = des_inodeidx * sizeof(struct ext2_inode) + inodes;
   int des_num_blocks = des_inode->i_size / EXT2_BLOCK_SIZE;
+  int block_pos;
+  struct ext2_dir_entry_2* dir;
+
+
+
   for (i = 0; i < des_num_blocks; i++) {
     block_pos = des_inode->i_block[i];
     dir = (void*)dir + EXT2_BLOCK_SIZE * block_pos;
@@ -128,8 +233,6 @@ int main(int argc, char **argv) {
 
   struct ext2_inode* src_inode = inodes + src_inodeidx * sizeof(struct ext2_inode);
   int src_num_blocks = src_inode->i_size / EXT2_BLOCK_SIZE;
-  int block_pos;
-  struct ext2_dir_entry_2* dir;
 
   for (i = 0; i < src_num_blocks; i++) {
     block_pos = src_inode->i_block[i];
@@ -177,7 +280,7 @@ int main(int argc, char **argv) {
         break;
       }
     }
-    if (found == 1) { // not found in this case
+    if (exist == 1) { // not found in this case
       block_bitmap = get_block_bitmap(block_bitmaploc);
       int* free_block = get_free_block(block_bitmap, 1);
       if (free_block == NULL) {
@@ -186,11 +289,11 @@ int main(int argc, char **argv) {
         exit(errno);
       }
       int idx_temp = *free_block;
-      dir = (void*)disk + EXT2+BLOCK_SIZE * (idx_temp + 1);
+      dir = (void*)disk + EXT2_BLOCK_SIZE * (idx_temp + 1);
       dir->inode = srcf_inodeidx + 1;
       dir->file_type = EXT2_FT_REG_FILE;
-      dir->name_len = des_nlength;
       dir->rec_len = EXT2_BLOCK_SIZE;
+      dir->name_len = des_nlength;
       strncpy((void*)dir + 8, des_n, des_nlength);
       set_block_bitmap(block_bitmaploc, idx_temp, 1);
       des_inode->i_size += EXT2_BLOCK_SIZE;
@@ -203,8 +306,8 @@ int main(int argc, char **argv) {
       dir = (void*)dir + cls;
       dir->file_type = EXT2_FT_REG_FILE;
       dir->rec_len = prev - cls;
-      dir->name_len = des_nlength;
       dir->inode = srcf_inodeidx + 1;
+      dir->name_len = des_nlength;
       strncpy((void*)dir + 8, des_n, des_nlength);
     }
 

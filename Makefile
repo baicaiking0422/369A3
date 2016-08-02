@@ -1,5 +1,5 @@
 FLAGS = -Wall -g -std=c99
-all : ext2_ls ext2_mkdir ext2_rm ext2_cp
+all : ext2_ls ext2_mkdir ext2_rm ext2_cp ext2_ln
 
 ext2_ls: ext2_ls.o ext2_helper.o
 	gcc ${FLAGS} -o ext2_ls ext2_ls.o ext2_helper.o
