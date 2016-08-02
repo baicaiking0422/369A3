@@ -4,7 +4,7 @@
 //
 //  Created by Yue Li on 2016-07-28.
 //
-// 
+//
 
 #include <stdio.h>
 #include <unistd.h>
@@ -21,6 +21,8 @@
 
 // helper functions, better write in ext2_helper but there is a warning when compile it, might relate to C99
 // if have time find a way to put it back to helper
+
+unsigned char *disk;
 
 int find_dirn(char* list, char* buf) {
   int i, j;
@@ -60,21 +62,21 @@ int find_dir_inode(char* query, void* inodes) {
     }
 
     if (strcmp(query, "") == 0) {
-      query[0] = '/';
       query[1] = '\0';
+      query[0] = '/';
     }
 
 
     int n = find_dirn(query, buf);
-    query += n;
 
+    query += n;
     int new_n_inode = -1;
     int n_blockidx = 0;
-
     int size = 0;
 
     n_block = inode->i_block[n_blockidx];
     dir = (struct ext2_dir_entry_2*)(disk + EXT2_BLOCK_SIZE * n_block);
+
     while (size < total_size) {
       size += dir->rec_len;
       if (dir->file_type == EXT2_FT_DIR) {
@@ -84,8 +86,10 @@ int find_dir_inode(char* query, void* inodes) {
           break;
         }
       }
+
       dir = (void*)dir + dir->rec_len;
-      if (size % EXT2_BLOCK_SIZE == 0) { // need to use next pointer
+
+      if (size % EXT2_BLOCK_SIZE == 0) {
         n_blockidx++;
         n_block = inode->i_block[n_blockidx];
         dir = (struct ext2_dir_entry_2*)(disk + EXT2_BLOCK_SIZE * n_block);
@@ -132,26 +136,20 @@ int main(int argc, char **argv) {
   }
 
   int fd = open(argv[1], O_RDWR);
-  // int src_len = strlen(src);
-  // int des_len = strlen(des);
+
   char* src;
   char* des;
-  // if (argc == 4) {
-  //   char* src = argv[2];
-  //   char* des = argv[3];
-  // if (argc == 5) {
-  //   char* src = argv[3];
-  //   char* des = argv[4];
-  // }
-  unsigned char *disk;
-  char* src = argv[2];
-  char* des = argv[3]; // how to put these in an if statement???
-
-// error checking => absolute path TODO: Is the check necessary?
-  if (src[0] != '/' || des[0] != '/') {
-    fprintf(stderr, "not absolute path\n");
-    exit(1);
+  if (argc == 4) {
+    src = argv[2];
+    des = argv[3];
   }
+  if (argc == 5) {
+    src = argv[3];
+    des = argv[4];
+  }
+
+  src = argv[2];
+  des = argv[3]; // how to put these in an if statement???
 
 // error checking => if either location refers to a directory (EISDIR)
   if (src[strlen(src) - 1] == '/' || des[strlen(src) - 1] == '/'){
@@ -162,6 +160,12 @@ int main(int argc, char **argv) {
       perror(des);
     }
     exit(errno);
+  }
+
+// error checking => absolute path TODO: Is the check necessary?
+  if (src[0] != '/' || des[0] != '/') {
+    fprintf(stderr, "not absolute path\n");
+    exit(1);
   }
 
   int i;
@@ -187,14 +191,16 @@ int main(int argc, char **argv) {
   }
 
   // find src dir, des dir
-  int src_inodeidx = find_dir_inode(src, inodes); //TODO: find_dir_inode
-  int des_inodeidx = find_dir_inode(des, inodes); //TODO: find_dir_inode
+  int src_inodeidx = find_dir_inode(src, inodes); //TODO: move find_dir_inode
+  int des_inodeidx = find_dir_inode(des, inodes); //TODO: move find_dir_inode
 
+// error checking =>
   if (src_inodeidx < 0 || des_inodeidx < 0) {
     errno = ENOENT;
     if (src_inodeidx < 0) {
       perror(src);
-    } else {
+    }
+    if (des_inodeidx < 0) {
       perror(des);
     }
     exit(errno);
@@ -205,8 +211,6 @@ int main(int argc, char **argv) {
   int des_num_blocks = des_inode->i_size / EXT2_BLOCK_SIZE;
   int block_pos;
   struct ext2_dir_entry_2* dir;
-
-
 
   for (i = 0; i < des_num_blocks; i++) {
     block_pos = des_inode->i_block[i];
@@ -308,9 +312,9 @@ int main(int argc, char **argv) {
       int cls = ((dir->name_len -1)/4+1)*4+8;
       dir->rec_len = cls;
       dir = (void*)dir + cls;
+      dir->inode = srcf_inodeidx + 1;
       dir->file_type = EXT2_FT_REG_FILE;
       dir->rec_len = prev - cls;
-      dir->inode = srcf_inodeidx + 1;
       dir->name_len = des_nlength;
       strncpy((void*)dir + 8, des_n, des_nlength);
     }
